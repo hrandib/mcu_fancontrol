@@ -3,4 +3,4 @@
 	url = ../stm8_libs
 [submodule ".\\Source\\scmrtos"]
 	path = .\\Source\\scmrtos
-	url = git@github.com:scmrtos/scmrtos.git
+	url = ../scmrtos
