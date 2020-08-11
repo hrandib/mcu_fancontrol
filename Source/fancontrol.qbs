@@ -1,7 +1,17 @@
 import qbs
 
+Project {
+    name: "Fancontrol Project"
+    references: [
+        "scmrtos/scmrtos.qbs",
+        "stm8_libs/stm8_libs.qbs"
+    ]
+
 CppApplication {
     name: "fancontrol"
+
+    Depends { name: "scmrtos" }
+    Depends { name: "stm8lib" }
 
     cpp.positionIndependentCode: false
     cpp.debugInformation: false
@@ -26,4 +36,6 @@ CppApplication {
     }
 
     files: ["main.cpp"]
+}
+
 }
