@@ -2,3 +2,5 @@
 *.ewnet
 *(Security copy)
 *bak~
+fancontrol.qbs.user
+build-fancontrol-iar*
