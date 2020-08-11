@@ -4,12 +4,13 @@ CppApplication {
     name: "fancontrol"
 
     cpp.positionIndependentCode: false
-    cpp.optimization: "small"
     cpp.debugInformation: false
+    cpp.generateLinkerMapFile: false
 
     cpp.commonCompilerFlags: [
         "-e",
-        "--eec++"
+        "--eec++",
+        "--mfc"
     ]
 
     cpp.driverLinkerFlags: [
