@@ -9,36 +9,37 @@ Project {
     ]
 
 Product {
-    name: "Common options"
+    name: "common_options"
 
     Export {
         Depends { name: "cpp" }
 
         cpp.defines: [
-            "STM8S103"
+            "STM8S103",
+            "F_CPU=2000000UL"
         ]
 
         cpp.commonCompilerFlags: [
             "-e",
             "--eec++",
-//            "--mfc"
+            "--mfc"
         ]
     }
 }
 
 CppApplication {
-    name: "Main app"
+    name: "main_app"
 
     Depends { name: "scmrtos" }
     Depends { name: "stm8lib" }
-    Depends { name: "Common options" }
+    Depends { name: "common_options" }
 
     cpp.positionIndependentCode: false
     cpp.debugInformation: false
     cpp.generateLinkerMapFile: true
 
     cpp.driverLinkerFlags: [
-        "--config_def", "_CSTACK_SIZE=0x100",
+        "--config_def", "_CSTACK_SIZE=0x40",
         "--config_def", "_HEAP_SIZE=0",
     ]
 

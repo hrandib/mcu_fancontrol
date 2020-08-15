@@ -57,7 +57,7 @@
 //       System Timer stuff
 //
 //
-#define SYSTEM_TIMER_VECTOR        (TIM4_OVR_UIF_vector - 2)
+#define SYSTEM_TIMER_VECTOR        (TIM4_OVR_UIF_vector)
 #define SYSTEM_TIMER_FLAG_CLEAR() (TIM4->SR1 &= ~TIM4_SR1_UIF)
 #define LOCK_SYSTEM_TIMER()       (TIM4->IER &= ~TIM4_IER_UIE)
 #define UNLOCK_SYSTEM_TIMER()     (TIM4->IER |= TIM4_IER_UIE)
