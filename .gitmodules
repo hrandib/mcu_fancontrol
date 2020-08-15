@@ -1,6 +1,6 @@
 [submodule ".\\Source\\stm8_libs"]
 	path = .\\Source\\stm8_libs
-	url = ../stm8_libs
+	url = git@github.com:hrandib/stm8_libs.git
 [submodule ".\\Source\\scmrtos"]
 	path = .\\Source\\scmrtos
-	url = ../scmrtos
+	url = git@github.com:hrandib/scmrtos.git 
