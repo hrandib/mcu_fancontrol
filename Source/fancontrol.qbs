@@ -22,13 +22,14 @@ Product {
         cpp.commonCompilerFlags: [
             "-e",
             "--eec++",
-            "--mfc"
+            "--mfc",
+            "--diag_suppress=Pa137,Go004,Go005",
         ]
     }
 }
 
 CppApplication {
-    name: "main_app"
+    name: "fancontrol"
 
     Depends { name: "scmrtos" }
     Depends { name: "stm8lib" }
@@ -48,6 +49,12 @@ CppApplication {
         prefix: cpp.toolchainInstallPath + "/../config/"
         fileTags: ["linkerscript"]
         files: ["lnkstm8s103f3.icf"]
+    }
+
+    Group {
+        name: "Compiled object file"
+        fileTagsFilter: "application"
+        qbs.install: true
     }
 
     files: ["main.cpp"]
