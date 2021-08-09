@@ -59,7 +59,7 @@ typedef uint_fast32_t tick_count_t;
 //    Specify scmRTOS Process Count. Must be less then 31
 //
 //
-#define  scmRTOS_PROCESS_COUNT              2
+#define  scmRTOS_PROCESS_COUNT          1
 
 //------------------------------------------------------------------------------
 //
@@ -175,6 +175,14 @@ typedef uint_fast32_t tick_count_t;
 //
 //
 #define scmRTOS_DEBUG_ENABLE  0
+
+//-----------------------------------------------------------------------------
+//
+//    scmRTOS ticks frequency
+//
+//
+#define scmRTOS_TICK_RATE_HZ  122
+
 
 #endif // scmRTOS_CONFIG_H
 //-----------------------------------------------------------------------------
