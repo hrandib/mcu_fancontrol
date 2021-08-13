@@ -16,7 +16,8 @@ Product {
 
         cpp.defines: [
             "STM8S103",
-            "F_CPU=2000000UL"
+            "F_CPU=2000000UL",
+            "__STDC_LIMIT_MACROS"
         ]
 
         cpp.commonCompilerFlags: [
@@ -42,6 +43,7 @@ CppApplication {
     cpp.driverLinkerFlags: [
         "--config_def", "_CSTACK_SIZE=0x40",
         "--config_def", "_HEAP_SIZE=0",
+        "--merge_duplicate_sections"
     ]
 
     Group {
