@@ -12,6 +12,7 @@ SpaceInEmptyBlock: true
 AllowShortFunctionsOnASingleLine: false
 SpaceBeforeParens: Never
 AlignEscapedNewlines: Left
+BreakConstructorInitializers: AfterColon
 
 BreakBeforeBraces: Custom
 BraceWrapping:

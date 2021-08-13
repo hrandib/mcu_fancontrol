@@ -1,5 +1,7 @@
 $outFile = $args[0]
 
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+
 $elftool = "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.3\stm8\bin\ielftool.exe"
 & $elftool $outFile "firmware.hex" "--ihex"
 
