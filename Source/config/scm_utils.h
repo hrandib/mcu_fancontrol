@@ -3,23 +3,21 @@
 
 #include "scmRTOS.h"
 
-#define SCM_TASK(name, prio, stacksize) \
+#define SCM_TASK(name, prio, stacksize)                \
     typedef OS::process<prio, stacksize> TProc_##name; \
-    \
-    template<> void TProc_##name::exec(); \
-    \
-    static TProc_##name proc_##name; \
-    \
-    template<> void TProc_##name::exec()
+                                                       \
+    template<>                                         \
+    void TProc_##name::exec();                         \
+                                                       \
+    static TProc_##name proc_##name;                   \
+                                                       \
+    template<>                                         \
+    void TProc_##name::exec()
 
-#define MS2ST(ms) \
-    (timeout_t((uint32_t)ms * scmRTOS_TICK_RATE_HZ / 1000 ? ms * scmRTOS_TICK_RATE_HZ / 1000 : 1))
+#define MS2ST(msecs) (timeout_t(((msecs * scmRTOS_TICK_RATE_HZ) + 999) / 1000))
 
-#define S2ST(secs) \
-  (MS2ST(secs * 1000))
+#define S2ST(secs) (secs * scmRTOS_TICK_RATE_HZ))
 
-
-#define ST2MS(ticks) \
-    (ticks * 1000 / configTICK_RATE_HZ)
+#define ST2MS(ticks) (uint16_t(((ticks * 1000UL) + (scmRTOS_TICK_RATE_HZ - 1)) / scmRTOS_TICK_RATE_HZ))
 
 #endif // SCM_UTILS_H
