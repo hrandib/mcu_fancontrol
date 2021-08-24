@@ -46,6 +46,10 @@ CppApplication {
         "--merge_duplicate_sections"
     ]
 
+    cpp.includePaths: [
+        "scm_aux"
+    ]
+
     Group {
         name: "Linker script"
         prefix: cpp.toolchainInstallPath + "/../config/"
@@ -57,6 +61,15 @@ CppApplication {
         name: "Compiled object file"
         fileTagsFilter: "application"
         qbs.install: true
+    }
+
+    Group {
+        name: "Aux"
+        prefix: "scm_aux/"
+        files: [
+            "*.h",
+            "*.cpp"
+        ]
     }
 
     files: ["main.cpp"]
