@@ -1,5 +1,6 @@
 import qbs
 import qbs.FileInfo
+import qbs.TextFile
 
 Project {
     name: "Fancontrol"
@@ -17,7 +18,8 @@ Product {
         cpp.defines: [
             "STM8S103",
             "F_CPU=2000000UL",
-            "__STDC_LIMIT_MACROS"
+            "__STDC_LIMIT_MACROS",
+            "UARTECHO"
         ]
 
         cpp.commonCompilerFlags: [
@@ -36,6 +38,8 @@ CppApplication {
     Depends { name: "stm8lib" }
     Depends { name: "common_options" }
 
+    type: ["print_size"]
+
     cpp.positionIndependentCode: false
     cpp.debugInformation: false
     cpp.generateLinkerMapFile: true
@@ -43,7 +47,7 @@ CppApplication {
     cpp.driverLinkerFlags: [
         "--config_def", "_CSTACK_SIZE=0x40",
         "--config_def", "_HEAP_SIZE=0",
-        "--merge_duplicate_sections"
+        "--merge_duplicate_sections",
     ]
 
     cpp.includePaths: [
@@ -68,8 +72,30 @@ CppApplication {
         prefix: "scm_aux/"
         files: [
             "*.h",
-            "*.cpp"
+            "*.cpp",
         ]
+    }
+
+    Rule {
+        inputs: ["application"]
+        outputFileTags: ["print_size"]
+        prepare: {
+            var reverseIndexOf = function(s, entry, position) {
+                while(s[position--] !== entry)
+                    ;
+                return position;
+            }
+            var mapPath = FileInfo.joinPaths(product.buildDirectory, product.name + ".map");
+            var cmd = new JavaScriptCommand();
+            var file = new TextFile(mapPath);
+            var content = file.readAll();
+            file.close()
+            var begin = reverseIndexOf(content, "\n", content.indexOf("bytes of")) + 2;
+            var end = content.indexOf("\n", content.lastIndexOf("bytes of")) + 1
+            cmd.description = content.slice(begin, end);
+            cmd.highlight = "Sections";
+            return cmd;
+        }
     }
 
     files: ["main.cpp"]
