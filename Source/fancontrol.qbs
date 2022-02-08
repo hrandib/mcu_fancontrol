@@ -85,6 +85,14 @@ CppApplication {
         ]
     }
 
+    Group {
+        name: "Sensors"
+        prefix: "sensors/"
+        files: [
+            "*.h",
+            "*.cpp",
+        ]
+    }
 
     Rule {
         inputs: ["application"]
