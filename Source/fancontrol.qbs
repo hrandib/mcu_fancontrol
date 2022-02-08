@@ -76,6 +76,16 @@ CppApplication {
         ]
     }
 
+    Group {
+        name: "Shell"
+        prefix: "shell/"
+        files: [
+            "*.h",
+            "*.cpp",
+        ]
+    }
+
+
     Rule {
         inputs: ["application"]
         outputFileTags: ["print_size"]

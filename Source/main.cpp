@@ -19,6 +19,7 @@ static void IncrementHandler(bool isLongPress)
         ++pwmVal;
     }
     Timer1::WriteCompareByte<Ch1>(pwmVal);
+    Timer1::WriteCompareByte<Ch2>(pwmVal);
 }
 
 static void DecrementHandler(bool isLongPress)
@@ -30,23 +31,7 @@ static void DecrementHandler(bool isLongPress)
         --pwmVal;
     }
     Timer1::WriteCompareByte<Ch1>(pwmVal);
-}
-
-SCM_TASK(ButtonsHandler, OS::pr0, 200)
-{
-    enum {
-        BUTTONS_NUMBER = 2,
-        LONGPRESS_DELAY_MS = 2000,
-        POLL_PERIOD_MS = 16,
-    };
-    typedef Pinlist<Pd5, SequenceOf<BUTTONS_NUMBER> > ButtonPins;
-    utils::ButtonsLongPress<BUTTONS_NUMBER, POLL_PERIOD_MS, LONGPRESS_DELAY_MS> buttons;
-    buttons[0] = DecrementHandler;
-    buttons[1] = IncrementHandler;
-    while(true) {
-        sleep(MS2ST(POLL_PERIOD_MS));
-        buttons.UpdateState(ButtonPins::Read());
-    }
+    Timer1::WriteCompareByte<Ch2>(pwmVal);
 }
 
 static void InitPwm()
@@ -54,8 +39,12 @@ static void InitPwm()
     GpioC::SetConfig<P6 | P7, GpioBase::Out_PushPull_fast>();
     Timer1::Init(1, ARPE | CEN);
     Timer1::WriteAutoReload(PWM_MAXVAL); // PWM 25kHz
-    Timer1::SetChannelCfg<Ch1, Output, ChannelCfgOut(Out_PWM_Mode2 | Out_PreloadEnable)>();
+    Timer1::SetChannelCfg<Ch1, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
     Timer1::ChannelEnable<Ch1>();
+    Timer1::SetChannelCfg<Ch2, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
+    Timer1::ChannelEnable<Ch2>();
+    Timer1::WriteCompareByte<Ch1>(PWM_MAXVAL / 4);
+    Timer1::WriteCompareByte<Ch2>(PWM_MAXVAL / 4);
 }
 
 static void InitPeripherals()

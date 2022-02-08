@@ -1,0 +1,13 @@
+#ifndef SHELL_CONFIG_H
+#define SHELL_CONFIG_H
+
+#endif // SHELL_CONFIG_H
+
+#define CMD_MAXARGS 4
+#define CMD_MINLENGTH 3
+#define CMD_BUF_SIZE 32
+
+#define UART_TX_RINGBUF_SIZE 32
+#define UART_RX_RINGBUF_SIZE 64
+
+#define UART_BAUDRATE 19200UL
