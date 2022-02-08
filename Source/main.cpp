@@ -7,32 +7,6 @@ using namespace Mcudrv;
 using namespace T1;
 
 static const uint8_t PWM_MAXVAL = 80;
-static const uint8_t PWM_MINVAL = 0;
-static utils::RangeLinear<int8_t, PWM_MINVAL, PWM_MAXVAL, 20> pwmVal;
-
-static void IncrementHandler(bool isLongPress)
-{
-    if(isLongPress) {
-        pwmVal.SetMax();
-    }
-    else {
-        ++pwmVal;
-    }
-    Timer1::WriteCompareByte<Ch1>(pwmVal);
-    Timer1::WriteCompareByte<Ch2>(pwmVal);
-}
-
-static void DecrementHandler(bool isLongPress)
-{
-    if(isLongPress) {
-        pwmVal.SetMin();
-    }
-    else {
-        --pwmVal;
-    }
-    Timer1::WriteCompareByte<Ch1>(pwmVal);
-    Timer1::WriteCompareByte<Ch2>(pwmVal);
-}
 
 static void InitPwm()
 {
