@@ -33,66 +33,57 @@ typedef Twis::Lm75<I2c> Lm75;
 typedef OneWire<Pd2> OneWireBus;
 typedef Ds18b20<OneWireBus, SENSOR_MAX_NUMBER> Ds18;
 
-class Lm75sensor : public Sensor
+enum { COLUMN_SIZE = 6 };
+
+static uint8_t* FormatTempData(int16_t val, uint8_t* buf)
 {
-    Lm75sensor(uint8_t id) : id_(id)
-    { }
+    uint8_t* ptr = io::itoa8(val >> 1, buf);
+    *ptr++ = '.';
+    *ptr++ = val & 1 ? '5' : '0';
+    *ptr = '\0';
+    return ptr;
+}
 
-    // Sensor interface
-public:
-    uint8_t GetTemp()
-    {
-        return Lm75::Read(id_);
-    }
-    uint8_t GetId()
-    {
-        return id_;
-    }
-private:
-    uint8_t id_;
-};
-
-class Ds18sensor : public Sensor
+static uint8_t* AddSpacing(uint8_t* buf, uint8_t spaces)
 {
+    while(spaces--) {
+        *buf++ = ' ';
+    }
+    return buf;
+}
 
-    // Sensor interface
-public:
-    uint8_t GetTemp();
-    uint8_t GetId();
-};
-
-SensorHandler::SensorHandler(BaseStream& bs) : bs_(bs), lm75sensors_()
+SensorHandler::SensorHandler(BaseStream& bs) : bs_(bs), sensorIds_()
 {
     I2c::Init();
     sensorsNumber_ = InitLm75();
-    sensorsNumber_ += InitDs18();
-    uint8_t buf[5];
+    sensorsNumber_ = InitDs18(sensorsNumber_);
+    uint8_t buf[10];
 
-    bs.Write("Number: ");
+    bs.Write("Sensors available: ");
     io::utoa8(sensorsNumber_, buf);
     bs.Write(buf, 1);
     bs.Write("\r\n");
-
-    //    for(uint8_t i = 0; i < sensorsNumber_; ++i) {
-    //        uint8_t result = Lm75::Read(lm75sensors_[i]);
-    //        uint8_t* ptr = io::utoa8(result / 2, buf);
-    //        bs.Write(buf, ptr - buf);
-    //        bs.Put('.');
-    //        bs.Put(result & 1 ? '5' : '0');
-    //        bs.Put(' ');
-    //    }
-    //    bs.Write("\r\n");
 }
 
 void SensorHandler::PrintTemp()
 {
-    int16_t vals[4];
-    Ds18::Get(vals);
-    uint8_t buf[10] = { 0 };
-    for(uint8_t i = 0; i < Ds18::GetSensorsNumber(); ++i) {
-        uint8_t* ptr = io::itoa16(vals[i], buf, 2);
-        bs_.Write(buf, ptr - buf);
-        bs_.Put(' ');
+    uint8_t buf[8];
+    for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
+        int16_t rawData = GetTemp(GetId(i));
+        uint8_t* pos = FormatTempData(rawData, buf);
+        pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
+        bs_.Write(buf, pos - buf);
+    }
+    bs_.Write("\r\n");
+}
+
+void SensorHandler::PrintIds()
+{
+    uint8_t buf[8];
+    for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
+        uint8_t* pos = io::utoa8(GetId(i), buf, 16);
+        pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
+        bs_.Write(buf, pos - buf);
     }
     bs_.Write("\r\n");
 }
@@ -102,9 +93,16 @@ void SensorHandler::Convert()
     Ds18::Convert();
 }
 
-int8_t SensorHandler::GetTemp(uint8_t id)
+int16_t SensorHandler::GetTemp(uint8_t id)
 {
-    return 0;
+    // DS18B20
+    if(id & DS18_ID_FLAG) {
+        return Ds18::Get(id & ~DS18_ID_FLAG) >> 3;
+    }
+    // LM75
+    else {
+        return Lm75::Read(id);
+    }
 }
 
 uint8_t SensorHandler::InitLm75()
@@ -112,7 +110,7 @@ uint8_t SensorHandler::InitLm75()
     uint8_t sensorPos = 0;
     for(uint8_t curSensorId = 0; curSensorId < 8; ++curSensorId) {
         if(Lm75::Detect(curSensorId)) {
-            lm75sensors_[sensorPos++] = curSensorId;
+            sensorIds_[sensorPos++] = curSensorId;
             if(sensorPos == SENSOR_MAX_NUMBER) {
                 break;
             }
@@ -121,9 +119,12 @@ uint8_t SensorHandler::InitLm75()
     return sensorPos;
 }
 
-uint8_t SensorHandler::InitDs18()
+uint8_t SensorHandler::InitDs18(uint8_t indexOffset)
 {
     OneWireBus::Init();
     uint8_t sensorsNumber = Ds18::Init();
-    return sensorsNumber;
+    for(uint8_t i = 0; i < sensorsNumber; ++i) {
+        sensorIds_[indexOffset + i] = DS18_ID_FLAG | i;
+    }
+    return sensorsNumber + indexOffset;
 }

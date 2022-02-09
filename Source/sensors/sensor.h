@@ -23,11 +23,12 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#include "string_utils.h"
 #include <stdint.h>
 
 struct Sensor
 {
-    virtual uint8_t GetTemp() = 0;
+    virtual int16_t GetTemp() = 0;
     virtual uint8_t GetId() = 0;
 };
 

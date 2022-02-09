@@ -45,6 +45,7 @@ SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
     UartStream<Uart> uartStream;
     Shell shell(uartStream);
     SensorHandler sensorHandler(uartStream);
+    sensorHandler.PrintIds();
     while(true) {
         //        shell.handle();
         sensorHandler.Convert();
