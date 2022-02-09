@@ -70,7 +70,15 @@ void SensorHandler::PrintTemp()
     uint8_t buf[8];
     for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
         int16_t rawData = GetTemp(GetId(i));
-        uint8_t* pos = FormatTempData(rawData, buf);
+        uint8_t* pos;
+        if(rawData != 0xFFFF) {
+            pos = FormatTempData(rawData, buf);
+        }
+        else {
+            pos = buf;
+            *pos++ = 'N';
+            *pos++ = 'A';
+        }
         pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
         bs_.Write(buf, pos - buf);
     }
@@ -81,7 +89,13 @@ void SensorHandler::PrintIds()
 {
     uint8_t buf[8];
     for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
-        uint8_t* pos = io::utoa8(GetId(i), buf, 16);
+        uint8_t id = GetId(i);
+        uint8_t* pos = buf;
+        if(id & 0x80) {
+            *pos++ = 'o';
+            *pos++ = 'w';
+        }
+        pos = io::utoa8(id & ~DS18_ID_FLAG, pos, 16);
         pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
         bs_.Write(buf, pos - buf);
     }

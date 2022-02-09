@@ -51,5 +51,6 @@ SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
         sensorHandler.Convert();
         sleep(MS2ST(POLL_PERIOD_MS));
         sensorHandler.PrintTemp();
+        sleep(MS2ST(100));
     }
 }
