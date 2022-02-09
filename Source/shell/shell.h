@@ -25,6 +25,7 @@
 
 #include "base_stream.h"
 #include "scm_utils.h"
+#include "sensor_handler.h"
 #include "shell_commands.h"
 #include "shell_config.h"
 
@@ -33,7 +34,7 @@ class Shell
 public:
     Shell(BaseStream& stream) : bs_(stream), charCounter_()
     {
-        bs_.Write("[ FAN CONTROLLER SHELL ]\r\n");
+        bs_.Write("\r\n[ FAN CONTROLLER SHELL ]\r\n");
     }
     void handle();
     uint8_t SplitArgs(char* buf, uint8_t bufLength, const char** argv);

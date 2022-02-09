@@ -51,7 +51,8 @@ CppApplication {
     ]
 
     cpp.includePaths: [
-        "scm_aux"
+        "scm_aux",
+        "sensors",
     ]
 
     Group {
