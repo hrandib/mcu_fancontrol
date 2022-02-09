@@ -36,6 +36,8 @@ class SensorHandler
 public:
     SensorHandler(BaseStream& bs);
     int8_t GetTemp(uint8_t id);
+    void PrintTemp();
+    void Convert();
 private:
     BaseStream& bs_;
     uint8_t sensorsNumber_;

@@ -39,14 +39,16 @@ static void InitUart()
 
 SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
 {
-    enum { POLL_PERIOD_MS = 16 };
+    enum { POLL_PERIOD_MS = 3000 };
 
     InitUart();
     UartStream<Uart> uartStream;
     Shell shell(uartStream);
-    SensorHandler sensorHander(uartStream);
+    SensorHandler sensorHandler(uartStream);
     while(true) {
-        shell.handle();
+        //        shell.handle();
+        sensorHandler.Convert();
         sleep(MS2ST(POLL_PERIOD_MS));
+        sensorHandler.PrintTemp();
     }
 }

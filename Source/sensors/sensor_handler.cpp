@@ -30,6 +30,9 @@ using namespace Mcudrv;
 typedef Twis::SoftTwi<Twis::Standard, Pb4, Pb5> I2c;
 typedef Twis::Lm75<I2c> Lm75;
 
+typedef OneWire<Pd2> OneWireBus;
+typedef Ds18b20<OneWireBus, SENSOR_MAX_NUMBER> Ds18;
+
 class Lm75sensor : public Sensor
 {
     Lm75sensor(uint8_t id) : id_(id)
@@ -65,16 +68,38 @@ SensorHandler::SensorHandler(BaseStream& bs) : bs_(bs), lm75sensors_()
     sensorsNumber_ += InitDs18();
     uint8_t buf[5];
 
-    bs.Write("Temps: ");
-    for(uint8_t i = 0; i < sensorsNumber_; ++i) {
-        uint8_t result = Lm75::Read(lm75sensors_[i]);
-        uint8_t* ptr = io::utoa8(result / 2, buf);
-        bs.Write(buf, ptr - buf);
-        bs.Put('.');
-        bs.Put(result & 1 ? '5' : '0');
-        bs.Put(' ');
-    }
+    bs.Write("Number: ");
+    io::utoa8(sensorsNumber_, buf);
+    bs.Write(buf, 1);
     bs.Write("\r\n");
+
+    //    for(uint8_t i = 0; i < sensorsNumber_; ++i) {
+    //        uint8_t result = Lm75::Read(lm75sensors_[i]);
+    //        uint8_t* ptr = io::utoa8(result / 2, buf);
+    //        bs.Write(buf, ptr - buf);
+    //        bs.Put('.');
+    //        bs.Put(result & 1 ? '5' : '0');
+    //        bs.Put(' ');
+    //    }
+    //    bs.Write("\r\n");
+}
+
+void SensorHandler::PrintTemp()
+{
+    int16_t vals[4];
+    Ds18::Get(vals);
+    uint8_t buf[10] = { 0 };
+    for(uint8_t i = 0; i < Ds18::GetSensorsNumber(); ++i) {
+        uint8_t* ptr = io::itoa16(vals[i], buf, 2);
+        bs_.Write(buf, ptr - buf);
+        bs_.Put(' ');
+    }
+    bs_.Write("\r\n");
+}
+
+void SensorHandler::Convert()
+{
+    Ds18::Convert();
 }
 
 int8_t SensorHandler::GetTemp(uint8_t id)
@@ -98,5 +123,7 @@ uint8_t SensorHandler::InitLm75()
 
 uint8_t SensorHandler::InitDs18()
 {
-    return 0;
+    OneWireBus::Init();
+    uint8_t sensorsNumber = Ds18::Init();
+    return sensorsNumber;
 }
