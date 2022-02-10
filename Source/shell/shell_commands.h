@@ -26,9 +26,9 @@
 #include "base_stream.h"
 #include <stdint.h>
 
-#define SHELL_FUNC(NAME) void NAME(BaseStream& s, uint8_t argc, const char* argv[])
+#define SHELL_FUNC(NAME) static void NAME(BaseStream& ios, uint8_t argc, const char* argv[])
 
-typedef void (*CommandFunc)(BaseStream& s, uint8_t argc, const char* argv[]);
+typedef void (*CommandFunc)(BaseStream& ios, uint8_t argc, const char* argv[]);
 
 struct Command
 {

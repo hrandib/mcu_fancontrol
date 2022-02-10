@@ -25,7 +25,7 @@
 
 SHELL_FUNC(DummyFunc)
 {
-    s.Write("Command not recognized\r\n");
+    ios.Write("Command not recognized\r\n");
 }
 
 CommandFunc Shell::GetCommandHandler(const char* cmd)

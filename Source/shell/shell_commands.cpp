@@ -53,7 +53,13 @@ SHELL_FUNC(GetPwm)
     ptr = utoa8(Timer1::GetCompareByte<Ch2>(), ptr + 1);
     *ptr++ = '\r';
     *ptr++ = '\n';
-    s.Write(buf, ptr - buf);
+    ios.Write(buf, ptr - buf);
 }
+
+// SHELL_FUNC(Sensors)
+//{
+//    sensorHandler.PrintIds(ios);
+//    sensorHandler.PrintTemp(ios);
+//}
 
 const Command shell_commands[] = { { "setpwm", SetPwm }, { "getpwm", GetPwm }, { NULL, NULL } };
