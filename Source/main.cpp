@@ -49,7 +49,7 @@ static void InitPeripherals()
     GpioB::WriteConfig<0xFF, GpioBase::In_Pullup>();
     GpioC::WriteConfig<0xFF, GpioBase::In_Pullup>();
     GpioD::WriteConfig<0xFF, GpioBase::In_Pullup>();
-    T4::Timer4::Init(T4::Div_32, T4::Cfg(T4::ARPE | T4::CEN)); // Systick = 122Hz
+    T4::Timer4::Init(T4::Div_64, T4::Cfg(T4::ARPE | T4::CEN)); // Systick = 122Hz
     T4::Timer4::EnableInterrupt();
     InitPwm();
 }
