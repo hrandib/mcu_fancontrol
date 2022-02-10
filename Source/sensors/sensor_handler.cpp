@@ -52,20 +52,14 @@ static uint8_t* AddSpacing(uint8_t* buf, uint8_t spaces)
     return buf;
 }
 
-SensorHandler::SensorHandler(BaseStream& bs) : bs_(bs), sensorIds_()
+SensorHandler::SensorHandler() : sensorIds_()
 {
     I2c::Init();
     sensorsNumber_ = InitLm75();
     sensorsNumber_ = InitDs18(sensorsNumber_);
-    uint8_t buf[10];
-
-    bs.Write("Sensors available: ");
-    io::utoa8(sensorsNumber_, buf);
-    bs.Write(buf, 1);
-    bs.Write("\r\n");
 }
 
-void SensorHandler::PrintTemp()
+void SensorHandler::PrintTemp(BaseStream& bs)
 {
     uint8_t buf[8];
     for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
@@ -80,14 +74,20 @@ void SensorHandler::PrintTemp()
             *pos++ = 'A';
         }
         pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
-        bs_.Write(buf, pos - buf);
+        bs.Write(buf, pos - buf);
     }
-    bs_.Write("\r\n");
+    bs.Write("\r\n");
 }
 
-void SensorHandler::PrintIds()
+void SensorHandler::PrintIds(BaseStream& bs)
 {
     uint8_t buf[8];
+
+    bs.Write("Sensors available: ");
+    io::utoa8(sensorsNumber_, buf);
+    bs.Write(buf, 1);
+    bs.Write("\r\n");
+
     for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
         uint8_t id = GetId(i);
         uint8_t* pos = buf;
@@ -97,9 +97,9 @@ void SensorHandler::PrintIds()
         }
         pos = io::utoa8(id & ~DS18_ID_FLAG, pos, 16);
         pos = AddSpacing(pos, COLUMN_SIZE - (pos - buf));
-        bs_.Write(buf, pos - buf);
+        bs.Write(buf, pos - buf);
     }
-    bs_.Write("\r\n");
+    bs.Write("\r\n");
 }
 
 void SensorHandler::Convert()

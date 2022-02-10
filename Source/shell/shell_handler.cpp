@@ -45,14 +45,14 @@ SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
     UartStream<Uart> uartStream;
     baseStream = &uartStream;
     Shell shell(uartStream);
-    SensorHandler sensorHandler(uartStream);
+    SensorHandler sensorHandler;
     sleep(MS2ST(50));
-    sensorHandler.PrintIds();
+    sensorHandler.PrintIds(uartStream);
     while(true) {
         //        shell.handle();
         sensorHandler.Convert();
         sleep(MS2ST(POLL_PERIOD_MS));
-        sensorHandler.PrintTemp();
+        sensorHandler.PrintTemp(uartStream);
         sleep(MS2ST(100));
     }
 }

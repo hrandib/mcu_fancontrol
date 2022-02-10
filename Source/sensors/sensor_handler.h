@@ -35,10 +35,10 @@ class SensorHandler
 public:
     enum { CONVERT_TIME_MS = 100 };
 
-    SensorHandler(BaseStream& bs);
+    SensorHandler();
     int16_t GetTemp(uint8_t id);
-    void PrintTemp();
-    void PrintIds();
+    void PrintTemp(BaseStream& bs);
+    void PrintIds(BaseStream& bs);
     void Convert();
     uint8_t GetId(uint8_t index)
     {
@@ -50,7 +50,6 @@ public:
     }
 private:
     enum { DS18_ID_FLAG = 0x80 };
-    BaseStream& bs_;
     uint8_t sensorsNumber_;
     uint8_t sensorIds_[SENSOR_MAX_NUMBER];
 
