@@ -107,6 +107,11 @@ void SensorHandler::Convert()
     Ds18::Convert();
 }
 
+bool SensorHandler::Ds18sensorsPresent()
+{
+    return (bool)Ds18::GetSensorsNumber();
+}
+
 int16_t SensorHandler::GetTemp(uint8_t id)
 {
     // DS18B20
@@ -138,7 +143,7 @@ uint8_t SensorHandler::InitDs18(uint8_t indexOffset)
     OneWireBus::Init();
     uint8_t sensorsNumber = Ds18::Init();
     for(uint8_t i = 0; i < sensorsNumber; ++i) {
-        sensorIds_[indexOffset + i] = DS18_ID_FLAG | i;
+        sensorIds_[i + indexOffset] = DS18_ID_FLAG | i;
     }
     return sensorsNumber + indexOffset;
 }

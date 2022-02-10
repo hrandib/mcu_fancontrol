@@ -26,10 +26,9 @@
 #include "base_stream.h"
 #include <stdint.h>
 
-#define SENSOR_MAX_NUMBER 4
+#define SENSOR_MAX_NUMBER 4 // each type LM75 and DS18B20, up to 8 in total
 
 // Initializes and stores existing sensors
-// Up to 8 sensors supported simultaneously, up to 4 DS18B20 and up to 4 LM75
 class SensorHandler
 {
 public:
@@ -48,10 +47,11 @@ public:
     {
         return sensorsNumber_;
     }
+    bool Ds18sensorsPresent();
 private:
     enum { DS18_ID_FLAG = 0x80 };
     uint8_t sensorsNumber_;
-    uint8_t sensorIds_[SENSOR_MAX_NUMBER];
+    uint8_t sensorIds_[SENSOR_MAX_NUMBER * 2];
 
     uint8_t InitLm75();
     uint8_t InitDs18(uint8_t indexOffset);
