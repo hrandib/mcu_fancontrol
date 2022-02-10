@@ -24,7 +24,6 @@
 #define SENSOR_HANDLER_H
 
 #include "base_stream.h"
-#include "sensor.h"
 #include <stdint.h>
 
 #define SENSOR_MAX_NUMBER 4

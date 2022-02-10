@@ -20,41 +20,38 @@
  * SOFTWARE.
  */
 
+#include "controller.h"
 #include "scm_utils.h"
-#include "shell.h"
 #include "uart_stream.h"
 
-using namespace Mcudrv;
+ControlStruct controlStruct[2];
 
-typedef Uarts::UartIrq<UART_TX_RINGBUF_SIZE, UART_RX_RINGBUF_SIZE> Uart;
-
-template void Uart::TxISR();
-template void Uart::RxISR();
-
-FORCEINLINE
-static void InitUart()
+SCM_TASK(ControlLoop, OS::pr1, 50)
 {
-    Uart::Init<Uarts::DefaultCfg, UART_BAUDRATE>();
-}
-
-SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
-{
-    enum { POLL_PERIOD_MS = 3000 };
-
-    InitUart();
-    UartStream<Uart> uartStream;
-    baseStream = &uartStream;
-    Shell shell(uartStream);
-    SensorHandler sensorHandler(uartStream);
-    sleep(MS2ST(50));
-    sensorHandler.PrintIds();
+    //    Controller c;
+    //    Shell shell(uartStream);
+    //    sensorHandler.PrintIds();
+    //    sensorHandler.Init(&uartStream);
+    //    uint8_t pollTimeCounter[3] = { 0 };
     while(true) {
-        //        shell.handle();
-        sensorHandler.Convert();
-        sleep(MS2ST(POLL_PERIOD_MS));
-        sensorHandler.PrintTemp();
-        sleep(MS2ST(100));
+        //        //        if(sensorHandler.IsDs18SensorsPresent()) {
+        //        //            sensorHandler.Convert();
+        //        //        }
+        sleep(MS2ST(5000));
+        //        //        for(uint8_t i = 0; i < 2; ++i) {
+        //        //            if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
+        //        //                c.Worker(controlStruct[0]);
+        //        //                pollTimeCounter[i] = 0;
+        //        //            }
+        //        //        }
+        //        //        if(++pollTimeCounter[2] >= 3) {
+        //        //        sensorHandler.PrintTemp();
+        //        //        }
+        //        // Guard delay between possible 1-Wire operations
+        //        sleep(MS2ST(100));
+        baseStream->Write("Hello!\r\n");
     }
 }
 
-BaseStream* baseStream;
+void Controller::Worker(const ControlStruct& cs)
+{ }

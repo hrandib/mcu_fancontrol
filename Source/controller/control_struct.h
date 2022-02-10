@@ -20,41 +20,38 @@
  * SOFTWARE.
  */
 
-#include "scm_utils.h"
-#include "shell.h"
-#include "uart_stream.h"
+#ifndef CONTROL_STRUCT_H
+#define CONTROL_STRUCT_H
 
-using namespace Mcudrv;
+#include <stdint.h>
 
-typedef Uarts::UartIrq<UART_TX_RINGBUF_SIZE, UART_RX_RINGBUF_SIZE> Uart;
-
-template void Uart::TxISR();
-template void Uart::RxISR();
-
-FORCEINLINE
-static void InitUart()
+struct ControlStruct
 {
-    Uart::Init<Uarts::DefaultCfg, UART_BAUDRATE>();
-}
+    enum AlgoType { ALGO_2POINT, ALGO_PI };
 
-SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
-{
-    enum { POLL_PERIOD_MS = 3000 };
+    uint8_t pollTimeSecs;
 
-    InitUart();
-    UartStream<Uart> uartStream;
-    baseStream = &uartStream;
-    Shell shell(uartStream);
-    SensorHandler sensorHandler(uartStream);
-    sleep(MS2ST(50));
-    sensorHandler.PrintIds();
-    while(true) {
-        //        shell.handle();
-        sensorHandler.Convert();
-        sleep(MS2ST(POLL_PERIOD_MS));
-        sensorHandler.PrintTemp();
-        sleep(MS2ST(100));
-    }
-}
+    uint8_t pwmChannel;
+    uint8_t pwmMin, pwmMax;
 
-BaseStream* baseStream;
+    uint8_t sensorsNumber;
+    uint8_t sensorIds[4];
+
+    AlgoType algoType;
+    union
+    {
+        struct Point2Algo
+        {
+            uint8_t a, b;
+        };
+
+        struct PiAlgo
+        {
+            uint8_t t, kp, ki, max_i;
+        };
+    } algoSettings;
+
+    uint8_t crc;
+};
+
+#endif // CONTROL_STRUCT_H

@@ -64,4 +64,6 @@ public:
 
 } // Mcudrv
 
+extern BaseStream* baseStream;
+
 #endif // BASE_STREAM_UART_H

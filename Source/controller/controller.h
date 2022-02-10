@@ -20,41 +20,24 @@
  * SOFTWARE.
  */
 
-#include "scm_utils.h"
-#include "shell.h"
-#include "uart_stream.h"
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
 
-using namespace Mcudrv;
+#include "base_stream.h"
+#include "control_struct.h"
+#include "scmRTOS.h"
+#include "sensor_handler.h"
 
-typedef Uarts::UartIrq<UART_TX_RINGBUF_SIZE, UART_RX_RINGBUF_SIZE> Uart;
-
-template void Uart::TxISR();
-template void Uart::RxISR();
-
-FORCEINLINE
-static void InitUart()
+class Controller
 {
-    Uart::Init<Uarts::DefaultCfg, UART_BAUDRATE>();
-}
+public:
+    //    Controller(BaseStream& bs, SensorHandler& sh) : bs_(bs), sh_(sh)
+    Controller()
+    { }
+    void Worker(const ControlStruct& controlStruct);
+private:
+    //    BaseStream& bs_;
+    //    SensorHandler& sh_;
+};
 
-SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
-{
-    enum { POLL_PERIOD_MS = 3000 };
-
-    InitUart();
-    UartStream<Uart> uartStream;
-    baseStream = &uartStream;
-    Shell shell(uartStream);
-    SensorHandler sensorHandler(uartStream);
-    sleep(MS2ST(50));
-    sensorHandler.PrintIds();
-    while(true) {
-        //        shell.handle();
-        sensorHandler.Convert();
-        sleep(MS2ST(POLL_PERIOD_MS));
-        sensorHandler.PrintTemp();
-        sleep(MS2ST(100));
-    }
-}
-
-BaseStream* baseStream;
+#endif // CONTROLLER_H

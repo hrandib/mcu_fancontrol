@@ -95,6 +95,15 @@ CppApplication {
         ]
     }
 
+    Group {
+        name: "Controller"
+        prefix: "controller/"
+        files: [
+            "*.h",
+            "*.cpp",
+        ]
+    }
+
     Rule {
         inputs: ["application"]
         outputFileTags: ["print_size"]
