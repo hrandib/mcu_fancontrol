@@ -21,37 +21,38 @@
  */
 
 #include "controller.h"
-#include "scm_utils.h"
-#include "uart_stream.h"
 
-ControlStruct controlStruct[2];
+static void Worker(const ControlStruct& cs, SensorHandler& sh);
 
-SCM_TASK(ControlLoop, OS::pr1, 50)
+SCM_TASK(ControlLoop, OS::pr1, 150)
 {
-    //    Controller c;
-    //    Shell shell(uartStream);
-    //    sensorHandler.PrintIds();
-    //    sensorHandler.Init(&uartStream);
-    //    uint8_t pollTimeCounter[3] = { 0 };
+    uint8_t pollTimeCounter[CHANNELS_NUMBER] = { 0 };
+    SensorHandler sensorHandler;
+    sensorHandler.PrintIds(*baseStream);
+
     while(true) {
-        //        //        if(sensorHandler.IsDs18SensorsPresent()) {
-        //        //            sensorHandler.Convert();
-        //        //        }
-        sleep(MS2ST(5000));
-        //        //        for(uint8_t i = 0; i < 2; ++i) {
-        //        //            if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
-        //        //                c.Worker(controlStruct[0]);
-        //        //                pollTimeCounter[i] = 0;
-        //        //            }
-        //        //        }
-        //        //        if(++pollTimeCounter[2] >= 3) {
-        //        //        sensorHandler.PrintTemp();
-        //        //        }
-        //        // Guard delay between possible 1-Wire operations
-        //        sleep(MS2ST(100));
-        baseStream->Write("Hello!\r\n");
+        if(sensorHandler.Ds18sensorsPresent()) {
+            sensorHandler.Convert();
+        }
+        sleep(S2ST(1));
+        for(uint8_t i = 0; i < CHANNELS_NUMBER; ++i) {
+            if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
+                Worker(controlStruct[i], sensorHandler);
+                pollTimeCounter[i] = 0;
+            }
+        }
     }
 }
 
-void Controller::Worker(const ControlStruct& cs)
-{ }
+static
+
+  void
+  Worker(const ControlStruct& cs, SensorHandler& sh)
+{
+    baseStream->Write("Worker: ");
+    baseStream->Put('0' + cs.pollTimeSecs);
+    baseStream->Write("\r\n");
+    if(cs.pollTimeSecs == 4) {
+        sh.PrintTemp(*baseStream);
+    }
+}

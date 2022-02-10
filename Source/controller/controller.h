@@ -23,21 +23,9 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "base_stream.h"
 #include "control_struct.h"
-#include "scmRTOS.h"
+#include "scm_utils.h"
 #include "sensor_handler.h"
-
-class Controller
-{
-public:
-    //    Controller(BaseStream& bs, SensorHandler& sh) : bs_(bs), sh_(sh)
-    Controller()
-    { }
-    void Worker(const ControlStruct& controlStruct);
-private:
-    //    BaseStream& bs_;
-    //    SensorHandler& sh_;
-};
+#include "uart_stream.h"
 
 #endif // CONTROLLER_H

@@ -25,9 +25,19 @@
 
 #include <stdint.h>
 
+#define CHANNELS_NUMBER 2
+
 struct ControlStruct
 {
     enum AlgoType { ALGO_2POINT, ALGO_PI };
+    struct PiAlgo
+    {
+        uint8_t t, kp, ki, max_i;
+    };
+    struct Point2Algo
+    {
+        uint8_t tmin, tmax;
+    };
 
     uint8_t pollTimeSecs;
 
@@ -40,18 +50,13 @@ struct ControlStruct
     AlgoType algoType;
     union
     {
-        struct Point2Algo
-        {
-            uint8_t a, b;
-        };
-
-        struct PiAlgo
-        {
-            uint8_t t, kp, ki, max_i;
-        };
-    } algoSettings;
+        Point2Algo p2Options;
+        PiAlgo piOptions;
+    } algo;
 
     uint8_t crc;
 };
+
+extern ControlStruct controlStruct[CHANNELS_NUMBER];
 
 #endif // CONTROL_STRUCT_H
