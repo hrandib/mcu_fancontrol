@@ -38,7 +38,7 @@
 
 #define MS2ST(msecs) (timeout_t(((msecs * scmRTOS_TICK_RATE_HZ) + 999) / 1000))
 
-#define S2ST(secs) (secs * scmRTOS_TICK_RATE_HZ))
+#define S2ST(secs) (secs * scmRTOS_TICK_RATE_HZ)
 
 #define ST2MS(ticks) (uint16_t(((ticks * 1000UL) + (scmRTOS_TICK_RATE_HZ - 1)) / scmRTOS_TICK_RATE_HZ))
 
