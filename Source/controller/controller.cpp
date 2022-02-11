@@ -22,14 +22,18 @@
 
 #include "controller.h"
 
+static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
+uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs);
 static void Worker(const ControlStruct& cs, SensorHandler& sh);
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
-    uint8_t pollTimeCounter[CHANNELS_NUMBER] = { 0 };
+    uint8_t pollTimeCounter[CHANNELS_NUMBER]; // uninit as intended
+    InitPwm();
     SensorHandler sensorHandler;
+    baseStream->Put('\r');
     sensorHandler.PrintIds(*baseStream);
-
+    sensorHandler.PrintTemp(*baseStream);
     while(true) {
         if(sensorHandler.Ds18sensorsPresent()) {
             sensorHandler.Convert();
@@ -44,15 +48,61 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
     }
 }
 
-static
-
-  void
-  Worker(const ControlStruct& cs, SensorHandler& sh)
+static void Worker(const ControlStruct& cs, SensorHandler& sh)
 {
-    baseStream->Write("Worker: ");
-    baseStream->Put('0' + cs.pollTimeSecs);
-    baseStream->Write("\r\n");
-    if(cs.pollTimeSecs == 4) {
-        sh.PrintTemp(*baseStream);
+    int16_t tCurrent = GetMaxTemp(cs, sh);
+    uint8_t pwmVal;
+    if(cs.algoType == ControlStruct::ALGO_2POINT) {
+        pwmVal = Algo2PointFunc(tCurrent, cs);
     }
+    else { // ALGO_PI
+        pwmVal = PWM_MAXVAL / 2;
+    }
+    SetPwm(cs.pwmChannel, pwmVal);
+    if(!cs.pwmChannel) {
+        //    baseStream->Write("PWM channel: ");
+        //    baseStream->Put('0' + cs.pwmChannel);
+
+        uint8_t buf[4];
+        baseStream->Write("Temp: ");
+        uint8_t* ptr = io::itoa16(tCurrent / 2, buf);
+        baseStream->Write(buf, ptr - buf);
+
+        baseStream->Write("\r\nPWM: ");
+        ptr = io::itoa16(pwmVal, buf);
+        baseStream->Write(buf, ptr - buf);
+        baseStream->Write("\r\n\r\n");
+    }
+}
+
+int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh)
+{
+    int16_t result = INT16_MIN;
+    for(uint8_t i = 0; i < cs.sensorsNumber; ++i) {
+        int16_t cur = sh.GetTemp(cs.sensorIds[i]);
+        if(cur > result) {
+            result = cur;
+        }
+    }
+    return result;
+}
+
+uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs)
+{
+    uint8_t result;
+    const ControlStruct::Point2Algo& algo = cs.algo.p2Options;
+    if(curTemp >= algo.tmax * 2) {
+        result = cs.pwmMax;
+    }
+    else if(curTemp <= algo.tmin * 2) {
+        result = cs.pwmMin;
+    }
+    else {
+        uint8_t tRange = (algo.tmax - algo.tmin) * 2;
+        uint16_t pwmRange = (cs.pwmMax - cs.pwmMin) << 8;
+        uint16_t k = pwmRange / tRange;
+        uint8_t tNorm = curTemp - (algo.tmin * 2);
+        result = ((k * tNorm) >> 8) + cs.pwmMin;
+    }
+    return result;
 }
