@@ -1,0 +1,9 @@
+#ifndef COMM_CONFIG_H
+#define COMM_CONFIG_H
+
+#define UART_TX_RINGBUF_SIZE 64
+#define UART_RX_RINGBUF_SIZE 64
+
+#define UART_BAUDRATE 19200UL
+
+#endif // COMM_CONFIG_H

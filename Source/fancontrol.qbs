@@ -79,8 +79,8 @@ CppApplication {
     }
 
     Group {
-        name: "Shell"
-        prefix: "shell/"
+        name: "UartComm"
+        prefix: "uart_comm/"
         files: [
             "*.h",
             "*.cpp",

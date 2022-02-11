@@ -20,46 +20,33 @@
  * SOFTWARE.
  */
 
-#include "shell_commands.h"
-#include "string_utils.h"
-#include "timers.h"
-#include <cstdlib>
-#include <stddef.h>
+#include "comm_config.h"
+#include "scm_utils.h"
+#include "uart_stream.h"
 
 using namespace Mcudrv;
-using namespace T1;
-using namespace io;
 
-SHELL_FUNC(SetPwm)
+typedef Uarts::UartIrq<UART_TX_RINGBUF_SIZE, UART_RX_RINGBUF_SIZE> Uart;
+
+template void Uart::TxISR();
+template void Uart::RxISR();
+
+FORCEINLINE
+static void InitUart()
 {
-    if(argc == 2) {
-        uint8_t chNum = (uint8_t)atoi(argv[0]);
-        uint8_t pwmVal = (uint8_t)atoi(argv[1]);
-        if(!chNum) {
-            Timer1::WriteCompareByte<Ch1>(pwmVal);
-        }
-        else {
-            Timer1::WriteCompareByte<Ch2>(pwmVal);
-        }
+    Uart::Init<Uarts::DefaultCfg, UART_BAUDRATE>();
+}
+
+SCM_TASK(ShellHandler, OS::pr0, 100)
+{
+    enum { POLL_PERIOD_MS = 16 };
+
+    InitUart();
+    UartStream<Uart> uartStream;
+    baseStream = &uartStream;
+    while(true) {
+        sleep(MS2ST(POLL_PERIOD_MS));
     }
-    // TODO: Print help
 }
 
-SHELL_FUNC(GetPwm)
-{
-    uint8_t buf[8];
-    uint8_t* ptr = utoa8(Timer1::GetCompareByte<Ch1>(), buf);
-    *ptr = ' ';
-    ptr = utoa8(Timer1::GetCompareByte<Ch2>(), ptr + 1);
-    *ptr++ = '\r';
-    *ptr++ = '\n';
-    ios.Write(buf, ptr - buf);
-}
-
-// SHELL_FUNC(Sensors)
-//{
-//    sensorHandler.PrintIds(ios);
-//    sensorHandler.PrintTemp(ios);
-//}
-
-const Command shell_commands[] = { { "setpwm", SetPwm }, { "getpwm", GetPwm }, { NULL, NULL } };
+BaseStream* baseStream;
