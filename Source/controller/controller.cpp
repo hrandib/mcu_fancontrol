@@ -23,8 +23,8 @@
 #include "controller.h"
 
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
-uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs);
-uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs);
+static uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs);
+static uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs);
 static void Worker(const ControlStruct& cs, SensorHandler& sh);
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
@@ -49,7 +49,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
     }
 }
 
-static void Worker(const ControlStruct& cs, SensorHandler& sh)
+void Worker(const ControlStruct& cs, SensorHandler& sh)
 {
     int16_t tCurrent = GetMaxTemp(cs, sh);
     uint8_t pwmVal;
