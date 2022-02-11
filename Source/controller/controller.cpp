@@ -24,6 +24,7 @@
 
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
 uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs);
+uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs);
 static void Worker(const ControlStruct& cs, SensorHandler& sh);
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
@@ -56,10 +57,10 @@ static void Worker(const ControlStruct& cs, SensorHandler& sh)
         pwmVal = Algo2PointFunc(tCurrent, cs);
     }
     else { // ALGO_PI
-        pwmVal = PWM_MAXVAL / 2;
+        pwmVal = AlgoPiFunc(tCurrent, cs);
     }
     SetPwm(cs.pwmChannel, pwmVal);
-    if(!cs.pwmChannel) {
+    if(cs.pwmChannel) {
         //    baseStream->Write("PWM channel: ");
         //    baseStream->Put('0' + cs.pwmChannel);
 
@@ -105,4 +106,48 @@ uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs)
         result = ((k * tNorm) >> 8) + cs.pwmMin;
     }
     return result;
+}
+
+uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs)
+{
+    static int16_t iVal[CHANNELS_NUMBER];
+    const ControlStruct::PiAlgo& algo = cs.algo.piOptions;
+    uint16_t result;
+    int16_t error = curTemp - (algo.t * 2);
+
+    iVal[cs.pwmChannel] += (algo.ki * error);
+    if(iVal[cs.pwmChannel] > (algo.max_i << 8)) {
+        iVal[cs.pwmChannel] = algo.max_i << 8;
+    }
+    else if(iVal[cs.pwmChannel] < 0) {
+        iVal[cs.pwmChannel] = 0;
+    }
+    if(error > 0) {
+        result = (((algo.kp * error) >> 5) + (iVal[cs.pwmChannel] >> 8));
+        if((result + cs.pwmMin) < cs.pwmMax) {
+            result += cs.pwmMin;
+        }
+        else {
+            result = cs.pwmMax;
+        }
+    }
+    else {
+        result = cs.pwmMin + (iVal[cs.pwmChannel] >> 8);
+    }
+
+    uint8_t buf[8];
+    baseStream->Write("iVal: ");
+    uint8_t* ptr = io::itoa16(iVal[cs.pwmChannel] >> 8, buf);
+    baseStream->Write(buf, ptr - buf);
+
+    baseStream->Write("\r\nError: ");
+    ptr = io::itoa16(error, buf);
+    baseStream->Write(buf, ptr - buf);
+
+    baseStream->Write("\r\npVal: ");
+    ptr = io::itoa16(((algo.kp * error) >> 5), buf);
+    baseStream->Write(buf, ptr - buf);
+    baseStream->Write("\r\n");
+
+    return (uint8_t)result;
 }

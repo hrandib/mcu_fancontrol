@@ -28,28 +28,35 @@
 ControlStruct controlStruct[CHANNELS_NUMBER] =
   {
     {   // channel 0
-        .pollTimeSecs = 4, // poll time in secs
+        .pollTimeSecs = 2, // poll time in secs
         .pwmChannel = 0, // PWM channel index (0 or 1)
-        .pwmMin = 0, .pwmMax = 80, // PWM regulation range, corresponds to 0-100%
+        .fanStop = false,
+        .pwmMin = 25, .pwmMax = 75, // PWM regulation range, corresponds to 0-100%
         .sensorsNumber = 1,
         .sensorIds = { 7, 0, 0, 0 }, //Sensor IDs. Single sensor, LM75 with address 0x07
         .algoType = ControlStruct::ALGO_2POINT, //Algorithm, 2 points
         .algo = {
-            .p2Options= { .tmin = 45, .tmax = 65 }
+            .p2Options= { .tmin = 35, .tmax = 55 }
         },
-        .crc = 0xCE //Maxim-Dallas 8bit crc, with init = 0xDE
+        .crc = 0xAA //Maxim-Dallas 8bit crc, with init = 0xDE
     },
     {   // channel 1
         .pollTimeSecs = 4, // poll time in secs
         .pwmChannel = 1, // PWM channel index (0 or 1)
-        .pwmMin = 0, .pwmMax = 60, // PWM regulation range, corresponds to 0-100%
-        .sensorsNumber = 1,
-        .sensorIds = { 7, 0, 0, 0 }, //Sensor IDs. Single sensor, LM75 with address 0x07
-        .algoType = ControlStruct::ALGO_2POINT, //Algorithm, 2 points
+        .fanStop = false,
+        .pwmMin = 10, .pwmMax = 60, // PWM regulation range, corresponds to 0-100%
+        .sensorsNumber = 2,
+        .sensorIds = { 7, 0x80, 0, 0 }, //Sensor IDs. LM75 with address 0x07 and DS18B20 with id 0
+        .algoType = ControlStruct::ALGO_PI, //Algorithm, 2 points
         .algo = {
-            .p2Options= { .tmin = 45, .tmax = 75 }
+            .piOptions= {
+                .t = 40,  // Temperature set point
+                .kp = 16, // Proportional coeff. scaled by 16 (real Kp = kp >> 4)
+                .ki = 64, // Integral coeff. scaled by 128 (real Ki = ki >> 7);
+                .max_i = 40 // Saturation limit for I value, corresponds to PWM units (0..80)
+            }
         },
-        .crc = 0xE2 //Maxim-Dallas 8bit crc, with init = 0xDE
+        .crc = 0x55 //Maxim-Dallas 8bit crc, with init = 0xDE
      }
   };
 // clang-format on
