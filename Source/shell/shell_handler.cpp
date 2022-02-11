@@ -44,9 +44,9 @@ SCM_TASK(ShellHandler, OS::pr0, CMD_BUF_SIZE + 100)
     InitUart();
     UartStream<Uart> uartStream;
     baseStream = &uartStream;
-    Shell shell(uartStream);
+    //    Shell shell(uartStream);
     while(true) {
-        shell.handle();
+        //        shell.handle();
         sleep(MS2ST(POLL_PERIOD_MS));
     }
 }
