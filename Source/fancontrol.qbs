@@ -53,6 +53,7 @@ CppApplication {
     cpp.includePaths: [
         "scm_aux",
         "sensors",
+        "pwm",
     ]
 
     Group {
@@ -98,6 +99,15 @@ CppApplication {
     Group {
         name: "Controller"
         prefix: "controller/"
+        files: [
+            "*.h",
+            "*.cpp",
+        ]
+    }
+
+    Group {
+        name: "Pwm"
+        prefix: "pwm/"
         files: [
             "*.h",
             "*.cpp",
