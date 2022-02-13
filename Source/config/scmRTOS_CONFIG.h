@@ -50,7 +50,7 @@
 #ifndef __IAR_SYSTEMS_ASM__
 #include <stdint.h>
 typedef uint16_t timeout_t;
-typedef uint_fast32_t tick_count_t;
+typedef uint_fast16_t tick_count_t;
 #endif // __IAR_SYSTEMS_ASM__
 
 //------------------------------------------------------------------------------

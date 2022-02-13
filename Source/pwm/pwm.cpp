@@ -36,8 +36,6 @@ void InitPwm()
     Timer1::ChannelEnable<Ch1>();
     Timer1::SetChannelCfg<Ch2, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
     Timer1::ChannelEnable<Ch2>();
-    Timer1::WriteCompareByte<Ch1>(PWM_MAXVAL / 2);
-    Timer1::WriteCompareByte<Ch2>(PWM_MAXVAL / 2);
 }
 
 void SetPwm(uint8_t ch, uint8_t val)

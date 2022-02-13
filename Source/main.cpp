@@ -22,6 +22,7 @@
 
 #include "pinlist.h"
 #include "scm_utils.h"
+#include "sensor_handler.h"
 #include "timers.h"
 #include "utils.h"
 

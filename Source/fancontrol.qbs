@@ -19,7 +19,6 @@ Product {
             "STM8S103",
             "F_CPU=2000000UL",
             "__STDC_LIMIT_MACROS",
-            "UARTECHO"
         ]
 
         cpp.commonCompilerFlags: [
@@ -45,7 +44,7 @@ CppApplication {
     cpp.generateLinkerMapFile: true
 
     cpp.driverLinkerFlags: [
-        "--config_def", "_CSTACK_SIZE=0x40",
+        "--config_def", "_CSTACK_SIZE=0x80",
         "--config_def", "_HEAP_SIZE=0",
         "--merge_duplicate_sections",
     ]
@@ -54,6 +53,7 @@ CppApplication {
         "scm_aux",
         "sensors",
         "pwm",
+        "controller",
     ]
 
     Group {

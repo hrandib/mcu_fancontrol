@@ -31,7 +31,7 @@ typedef Twis::SoftTwi<Twis::Standard, Pb4, Pb5> I2c;
 typedef Twis::Lm75<I2c> Lm75;
 
 typedef OneWire<Pd2> OneWireBus;
-typedef Ds18b20<OneWireBus, SENSOR_MAX_NUMBER> Ds18;
+typedef Ds18b20<OneWireBus, SENSOR_MAX_NUMBER / 2> Ds18;
 
 enum { COLUMN_SIZE = 6 };
 
@@ -52,12 +52,16 @@ static uint8_t* AddSpacing(uint8_t* buf, uint8_t spaces)
     return buf;
 }
 
-SensorHandler::SensorHandler() : sensorIds_()
+void SensorHandler::Init()
 {
     I2c::Init();
     sensorsNumber_ = InitLm75();
+    OneWireBus::Init();
     sensorsNumber_ = InitDs18(sensorsNumber_);
 }
+
+SensorHandler::SensorHandler() : sensorIds_()
+{ }
 
 void SensorHandler::PrintTemp(BaseStream& bs)
 {
@@ -112,6 +116,13 @@ bool SensorHandler::Ds18sensorsPresent()
     return (bool)Ds18::GetSensorsNumber();
 }
 
+void SensorHandler::GetValues(int16_t* buf)
+{
+    for(uint8_t i = 0; i < GetSensorsNumber(); ++i) {
+        buf[i] = GetTemp(GetId(i));
+    }
+}
+
 int16_t SensorHandler::GetTemp(uint8_t id)
 {
     // DS18B20
@@ -130,7 +141,7 @@ uint8_t SensorHandler::InitLm75()
     for(uint8_t curSensorId = 0; curSensorId < 8; ++curSensorId) {
         if(Lm75::Detect(curSensorId)) {
             sensorIds_[sensorPos++] = curSensorId;
-            if(sensorPos == SENSOR_MAX_NUMBER) {
+            if(sensorPos == SENSOR_MAX_NUMBER / 2) {
                 break;
             }
         }
@@ -140,10 +151,15 @@ uint8_t SensorHandler::InitLm75()
 
 uint8_t SensorHandler::InitDs18(uint8_t indexOffset)
 {
-    OneWireBus::Init();
     uint8_t sensorsNumber = Ds18::Init();
+    if(sensorsNumber > SENSOR_MAX_NUMBER / 2) {
+        sensorsNumber = SENSOR_MAX_NUMBER / 2;
+    }
     for(uint8_t i = 0; i < sensorsNumber; ++i) {
         sensorIds_[i + indexOffset] = DS18_ID_FLAG | i;
     }
     return sensorsNumber + indexOffset;
 }
+
+SensorHandler sensorHandler;
+OS::TMutex sensorMutex;

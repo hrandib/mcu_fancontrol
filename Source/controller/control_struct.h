@@ -25,7 +25,8 @@
 
 #include <stdint.h>
 
-#define CHANNELS_NUMBER 2
+#define CH_NUMBER 2
+#define CRC_INIT_VAL 0xDE
 
 struct ControlStruct
 {
@@ -58,6 +59,6 @@ struct ControlStruct
     uint8_t crc;
 };
 
-extern ControlStruct controlStruct[CHANNELS_NUMBER];
+extern const ControlStruct controlStruct[CH_NUMBER];
 
 #endif // CONTROL_STRUCT_H

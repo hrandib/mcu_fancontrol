@@ -23,9 +23,10 @@
 #include "control_struct.h"
 
 // clang-format off
+
 // Default config in the eeprom after uploading the firmware
 #pragma location = ".eeprom.noinit"
-ControlStruct controlStruct[CHANNELS_NUMBER] =
+const ControlStruct controlStruct[CH_NUMBER] =
   {
     {   // channel 0
         .pollTimeSecs = 2,              // poll time in secs

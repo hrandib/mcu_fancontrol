@@ -21,7 +21,12 @@
  */
 
 #include "comm_config.h"
+#include "control_struct.h"
+#include "crc.h"
+#include "device_info.h"
+#include "flash.h"
 #include "scm_utils.h"
+#include "sensor_handler.h"
 #include "uart_stream.h"
 
 using namespace Mcudrv;
@@ -37,16 +42,83 @@ static void InitUart()
     Uart::Init<Uarts::DefaultCfg, UART_BAUDRATE>();
 }
 
-SCM_TASK(ShellHandler, OS::pr0, 100)
+static uint8_t WriteControlStruct();
+
+SCM_TASK(ShellHandler, OS::pr0, 200)
 {
     enum { POLL_PERIOD_MS = 16 };
 
     InitUart();
-    UartStream<Uart> uartStream;
-    baseStream = &uartStream;
     while(true) {
+        uint8_t c;
+        while(Uart::Getch(c)) {
+            switch(c) {
+                // Device info
+                case 'i': {
+                    Uart::Putbuf(deviceInfo);
+                    uint8_t sn = sensorHandler.GetSensorsNumber();
+                    Uart::Putch(sn);
+                    Uart::Putbuf(sensorHandler.GetIds(), sn);
+                } break;
+                // Write config
+                case 'w':
+                    sleep(MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1);
+                    Uart::Putch(WriteControlStruct());
+                    break;
+                // Read config
+                case 'r':
+                    Uart::Putbuf(controlStruct);
+                    break;
+                // Sensor data
+                case 't': {
+                    uint8_t sn = sensorHandler.GetSensorsNumber();
+                    sensorMutex.lock();
+                    int16_t values[8];
+                    sensorHandler.GetValues(values);
+                    sensorMutex.unlock();
+                    Uart::Putbuf((const uint8_t*)values, sn * 2);
+                } break;
+            }
+        }
         sleep(MS2ST(POLL_PERIOD_MS));
     }
 }
 
-BaseStream* baseStream;
+static uint8_t WriteControlStruct()
+{
+    uint8_t result_status = 0;
+    ControlStruct cs[CH_NUMBER];
+    for(uint8_t ch = 0; ch < CH_NUMBER; ++ch) {
+        Crc::Crc8 crc;
+        uint8_t* arr = (uint8_t*)&cs[ch];
+        uint8_t c;
+        crc.Init(CRC_INIT_VAL);
+        for(uint8_t bi = 0; bi < sizeof(ControlStruct); ++bi) {
+            if(!Uart::Getch(c)) {
+                break;
+            }
+            crc(c);
+            arr[bi] = c;
+        }
+        if(!crc.GetResult()) {
+            ++result_status;
+        }
+        else {
+            break;
+        }
+    }
+    if(result_status == CH_NUMBER) {
+        using namespace Mem;
+        Unlock<Eeprom>();
+        sensorMutex.lock();
+        if(IsUnlocked<Eeprom>()) {
+            for(uint8_t i = 0; i < CH_NUMBER; ++i) {
+                *const_cast<ControlStruct*>(&controlStruct[i]) = cs[i];
+            }
+            ++result_status;
+        }
+        Lock<Eeprom>();
+        sensorMutex.unlock();
+    }
+    return result_status;
+}

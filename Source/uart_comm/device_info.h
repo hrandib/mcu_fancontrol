@@ -20,50 +20,20 @@
  * SOFTWARE.
  */
 
-#ifndef BASE_STREAM_UART_H
-#define BASE_STREAM_UART_H
+#ifndef DEVICE_INFO_H
+#define DEVICE_INFO_H
 
-#include "base_stream.h"
-#include "uart.h"
+#include <stdint.h>
 
-namespace Mcudrv {
-
-// Use Uarts::Uart... for specialization
-template<typename Uart>
-class UartStream : public BaseStream
+struct DeviceInfo
 {
-public:
-    byte_t Get()
-    {
-        byte_t b;
-        while(!Uart::Getch(b))
-            ;
-        return b;
-    }
+    const uint8_t FW_MAJOR;
+    const uint8_t FW_MINOR;
 
-    void Put(byte_t b)
-    {
-        Uart::Putch(b);
-    }
-
-    length_t Read(byte_t* buf, length_t len)
-    {
-        byte_t b;
-        length_t result_len = len;
-        while(result_len-- && Uart::Getch(b)) {
-            *buf++ = b;
-        }
-        return len - result_len - 1;
-    }
-
-    length_t Write(const byte_t* buf, length_t len)
-    {
-        return Uart::Putbuf(buf, len);
-    }
+    const uint8_t CHANNELS_NUMBER;
+    const uint8_t CH_ANALOG_MASK;
 };
 
-} // Mcudrv
+extern DeviceInfo deviceInfo;
 
-// extern BaseStream* baseStream;
-
-#endif // BASE_STREAM_UART_H
+#endif // DEVICE_INFO_H
