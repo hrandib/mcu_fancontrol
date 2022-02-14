@@ -22,10 +22,13 @@
 
 #include "controller.h"
 
+static void InitFanStopPin();
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
 static uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs);
 static uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs);
 static void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh);
+
+typedef Mcudrv::Pa3 FanStopPin;
 
 bool isStopped[CH_NUMBER];
 int16_t iVal[CH_NUMBER];
@@ -33,6 +36,9 @@ int16_t iVal[CH_NUMBER];
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
     uint8_t pollTimeCounter[CH_NUMBER]; // uninit as intended
+    if(controlStruct[1].fanStopHysteresis) {
+        InitFanStopPin();
+    }
     InitPwm();
     sensorHandler.Init();
     while(true) {
@@ -49,8 +55,16 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
             }
         }
         sensorMutex.unlock();
+        FanStopPin::SetOrClear(isStopped[1]);
         sleep(MS2ST(1000) - (get_tick_count() - ticks_start));
     }
+}
+
+void InitFanStopPin()
+{
+    using namespace Mcudrv;
+    FanStopPin::SetConfig<GpioBase::Out_PushPull>();
+    FanStopPin::Set();
 }
 
 void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh)

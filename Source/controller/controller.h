@@ -24,6 +24,7 @@
 #define CONTROLLER_H
 
 #include "control_struct.h"
+#include "gpio.h"
 #include "pwm.h"
 #include "scm_utils.h"
 #include "sensor_handler.h"
