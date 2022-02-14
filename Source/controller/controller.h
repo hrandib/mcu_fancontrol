@@ -27,6 +27,8 @@
 #include "pwm.h"
 #include "scm_utils.h"
 #include "sensor_handler.h"
-#include "uart_stream.h"
+
+extern bool isStopped[CH_NUMBER];
+extern int16_t iVal[CH_NUMBER];
 
 #endif // CONTROLLER_H

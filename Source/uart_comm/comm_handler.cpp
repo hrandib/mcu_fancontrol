@@ -22,12 +22,13 @@
 
 #include "comm_config.h"
 #include "control_struct.h"
+#include "controller.h"
 #include "crc.h"
 #include "device_info.h"
 #include "flash.h"
 #include "scm_utils.h"
 #include "sensor_handler.h"
-#include "uart_stream.h"
+#include "uart.h"
 
 using namespace Mcudrv;
 
@@ -78,6 +79,20 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                     sensorMutex.unlock();
                     Uart::Putbuf((const uint8_t*)values, sn * 2);
                 } break;
+                // debug data
+                case 'd': {
+                    using namespace T1;
+                    sensorMutex.lock();
+                    // PWM values
+                    Uart::Putch(Timer1::ReadCompareByte<Ch1>());
+                    Uart::Putch(Timer1::ReadCompareByte<Ch2>());
+                    // Controller data
+                    Uart::Putch(isStopped[0]);
+                    Uart::Putch(isStopped[1]);
+                    Uart::Putbuf(iVal[0]);
+                    Uart::Putbuf(iVal[1]);
+                    sensorMutex.unlock();
+                } break;
             }
         }
         sleep(MS2ST(POLL_PERIOD_MS));
@@ -114,8 +129,8 @@ static uint8_t WriteControlStruct()
         if(IsUnlocked<Eeprom>()) {
             for(uint8_t i = 0; i < CH_NUMBER; ++i) {
                 *const_cast<ControlStruct*>(&controlStruct[i]) = cs[i];
+                ++result_status;
             }
-            ++result_status;
         }
         Lock<Eeprom>();
         sensorMutex.unlock();

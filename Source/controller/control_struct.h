@@ -42,8 +42,7 @@ struct ControlStruct
 
     uint8_t pollTimeSecs;
 
-    uint8_t pwmChannel;
-    bool fanStop;
+    uint8_t fanStopHysteresis;
     uint8_t pwmMin, pwmMax;
 
     uint8_t sensorsNumber;

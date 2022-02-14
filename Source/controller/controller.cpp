@@ -23,9 +23,12 @@
 #include "controller.h"
 
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
-static uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs);
-static uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs);
-static void Worker(const ControlStruct& cs, SensorHandler& sh);
+static uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs);
+static uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs);
+static void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh);
+
+bool isStopped[CH_NUMBER];
+int16_t iVal[CH_NUMBER];
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
@@ -41,7 +44,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
         sleep(MS2ST(100));
         for(uint8_t i = 0; i < CH_NUMBER; ++i) {
             if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
-                Worker(controlStruct[i], sensorHandler);
+                Worker(i, controlStruct[i], sensorHandler);
                 pollTimeCounter[i] = 0;
             }
         }
@@ -50,17 +53,17 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
     }
 }
 
-void Worker(const ControlStruct& cs, SensorHandler& sh)
+void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh)
 {
     int16_t tCurrent = GetMaxTemp(cs, sh);
     uint8_t pwmVal;
     if(cs.algoType == ControlStruct::ALGO_2POINT) {
-        pwmVal = Algo2PointFunc(tCurrent, cs);
+        pwmVal = Algo2PointFunc(channel, tCurrent, cs);
     }
     else { // ALGO_PI
-        pwmVal = AlgoPiFunc(tCurrent, cs);
+        pwmVal = AlgoPiFunc(channel, tCurrent, cs);
     }
-    SetPwm(cs.pwmChannel, pwmVal);
+    SetPwm(channel, pwmVal);
 }
 
 int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh)
@@ -75,15 +78,20 @@ int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh)
     return result;
 }
 
-uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs)
+uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs)
 {
-    uint8_t result;
+    uint8_t result = 0;
     const ControlStruct::Point2Algo& algo = cs.algo.p2Options;
     if(curTemp >= algo.tmax * 2) {
         result = cs.pwmMax;
     }
     else if(curTemp <= algo.tmin * 2) {
-        result = cs.pwmMin;
+        if(cs.fanStopHysteresis && ((algo.tmin * 2) - curTemp) > (cs.fanStopHysteresis * 2)) {
+            isStopped[channel] = true;
+        }
+        else if(!isStopped[channel]) {
+            result = cs.pwmMin;
+        }
     }
     else {
         uint8_t tRange = (algo.tmax - algo.tmin) * 2;
@@ -91,35 +99,38 @@ uint8_t Algo2PointFunc(int16_t curTemp, const ControlStruct& cs)
         uint16_t k = pwmRange / tRange;
         uint8_t tNorm = curTemp - (algo.tmin * 2);
         result = ((k * tNorm) >> 8) + cs.pwmMin;
+        isStopped[channel] = false;
     }
     return result;
 }
-
-uint8_t AlgoPiFunc(int16_t curTemp, const ControlStruct& cs)
+uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs)
 {
-    static int16_t iVal[CH_NUMBER];
     const ControlStruct::PiAlgo& algo = cs.algo.piOptions;
-    uint16_t result;
+    uint16_t result = 0;
     int16_t error = curTemp - (algo.t * 2);
 
-    iVal[cs.pwmChannel] += (algo.ki * error);
-    if(iVal[cs.pwmChannel] > (algo.max_i << 8)) {
-        iVal[cs.pwmChannel] = algo.max_i << 8;
+    iVal[channel] += (algo.ki * error);
+    if(iVal[channel] > (algo.max_i << 8)) {
+        iVal[channel] = algo.max_i << 8;
     }
-    else if(iVal[cs.pwmChannel] < 0) {
-        iVal[cs.pwmChannel] = 0;
+    else if(iVal[channel] < 0) {
+        iVal[channel] = 0;
     }
     if(error > 0) {
-        result = (((algo.kp * error) >> 5) + (iVal[cs.pwmChannel] >> 8));
+        result = (((algo.kp * error) >> 5) + (iVal[channel] >> 8));
         if((result + cs.pwmMin) < cs.pwmMax) {
             result += cs.pwmMin;
         }
         else {
             result = cs.pwmMax;
         }
+        isStopped[channel] = false;
     }
-    else {
-        result = cs.pwmMin + (iVal[cs.pwmChannel] >> 8);
+    else if(cs.fanStopHysteresis && error < (cs.fanStopHysteresis * 2)) {
+        isStopped[channel] = true;
+    }
+    else if(!isStopped[channel]) {
+        result = cs.pwmMin + (iVal[channel] >> 8);
     }
 
     return (uint8_t)result;
