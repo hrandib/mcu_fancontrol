@@ -59,7 +59,7 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                     Uart::Putbuf(deviceInfo);
                     uint8_t sn = sensorHandler.GetSensorsNumber();
                     Uart::Putch(sn);
-                    Uart::Putbuf(sensorHandler.GetIds(), sn);
+                    Uart::Putbuf(sensorHandler.GetIds(), SENSOR_MAX_NUMBER);
                 } break;
                 // Write config
                 case 'w':
@@ -72,9 +72,9 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                     break;
                 // Sensor data
                 case 't': {
+                    int16_t values[8];
                     uint8_t sn = sensorHandler.GetSensorsNumber();
                     sensorMutex.lock();
-                    int16_t values[8];
                     sensorHandler.GetValues(values);
                     sensorMutex.unlock();
                     Uart::Putbuf((const uint8_t*)values, sn * 2);
