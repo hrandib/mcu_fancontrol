@@ -152,6 +152,9 @@ def norm_pwm(pwm_raw):
     return round((pwm_raw * PWM_MAX_PERCENT) / PWM_MAX_RAW)
 
 
+norm_max_i = norm_pwm
+
+
 def to_raw_pwm(pwm):
     return round((pwm * PWM_MAX_RAW) / PWM_MAX_PERCENT)
 
@@ -180,7 +183,8 @@ PWM_NAME_PREFIX = "OUT"
 def add_config_pwms(config, cs):
     config['pwms'] = []
     for i in range(device_info['ch_number']):
-        config['pwms'].append({f'{PWM_NAME_PREFIX}{i}': {f'channel': i, 'minpwm': cs[i]['pwmMin'], 'maxpwm': cs[i]['pwmMax']}})
+        config['pwms'].append({f'{PWM_NAME_PREFIX}{i}':
+            {f'channel': i, 'minpwm': norm_pwm(cs[i]['pwmMin']), 'maxpwm': norm_pwm(cs[i]['pwmMax'])}})
         fanstop_hyst = cs[i]['fanStopHysteresis']
         if fanstop_hyst:
             config['pwms'][i][f'OUT{i}']['fanstop_hyst'] = fanstop_hyst
@@ -192,9 +196,14 @@ def add_config_controllers(config, cs):
         sensors = []
         for sn in range(cs[i]['sensorNumber']):
             sensors.append(f'S{sn}')
-        algo = cs[i]['algo']
-        mode = 'two_point' if cs[i]['algoType'] == 0 else 'pi'
-        settings = algo
+        settings = cs[i]['algo'].copy()
+        if cs[i]['algoType'] == 0:
+            mode = 'two_point'
+        else:
+            mode = 'pi'
+            settings['kp'] = norm_kp(settings['kp'])
+            settings['ki'] = norm_ki(settings['ki'])
+            settings['max_i'] = norm_max_i(settings['max_i'])
         poll_time = cs[i]['pollTimeSecs']
         config['controllers'].append({f'CTRL{i}':
             {'sensor': sensors, 'pwm': f'{PWM_NAME_PREFIX}{i}', 'mode': mode, 'set': settings, 'poll': poll_time}})
@@ -242,9 +251,9 @@ elif args.port is not None:
         add_config_sensors(config_template)
         add_config_pwms(config_template, cs)
         add_config_controllers(config_template, cs)
-        f = open(args.read, "w")
-        yaml.dump(config_template, f)
-        f.close()
+        # f = open(args.read, "w")
+        yaml.dump(config_template, sys.stdout)
+        # f.close()
     elif args.debug:
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(get_debug_data(serial))
