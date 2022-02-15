@@ -83,14 +83,15 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                 case 'd': {
                     using namespace T1;
                     sensorMutex.lock();
+                    uint8_t buf[4];
                     // PWM values
-                    Uart::Putch(Timer1::ReadCompareByte<Ch1>());
-                    Uart::Putch(Timer1::ReadCompareByte<Ch2>());
+                    buf[0] = Timer1::ReadCompareByte<Ch1>();
+                    buf[1] = Timer1::ReadCompareByte<Ch2>();
                     // Controller data
-                    Uart::Putch(isStopped[0]);
-                    Uart::Putch(isStopped[1]);
-                    Uart::Putbuf(iVal[0]);
-                    Uart::Putbuf(iVal[1]);
+                    buf[2] = isStopped[0];
+                    buf[3] = isStopped[1];
+                    Uart::Putbuf(buf);
+                    Uart::Putbuf(iVal);
                     sensorMutex.unlock();
                 } break;
             }

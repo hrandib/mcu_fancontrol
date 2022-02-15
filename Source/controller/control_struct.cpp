@@ -38,7 +38,7 @@ const ControlStruct controlStruct[CH_NUMBER] =
         .algo = {
             .p2Options= { .tmin = 35, .tmax = 55 }
         },
-        .crc = 0x3C         //Maxim-Dallas 8bit crc, with init = 0xDE
+        .crc = 0x98         //Maxim-Dallas 8bit crc, with init = 0xDE
     },
     {   // channel 1
         .pollTimeSecs = 4,      // poll time in secs
