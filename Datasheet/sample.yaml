@@ -54,9 +54,10 @@ pwms:
 #
 #   For 'pi' it contains:
 #   t - desired temperature setting
-#   kp - proportional coefficient
-#   ki - integral coefficient
+#   kp - proportional coefficient (max value = 20)
+#   ki - integral coefficient (max value = 2.5)
 #   max_i - maximum allowed value for I component in percents, default value = 50
+# Note: kp and ki coefficients define degrees to % of PWM function
 controllers:
   - main_controller: { sensor: [ case_sens, pcb_sens ], pwm: case_fan, mode: two_point,
       set: { tmin: 50, tmax: 78 }, poll: 4
