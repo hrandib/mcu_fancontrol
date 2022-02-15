@@ -5,7 +5,29 @@ import argparse
 
 SIZEOF_DEVICE_INFO = 13
 SIZEOF_CONTROL_STRUCT = 15
+SIZEOF_DEBUG_STRUCT = 8
+
+
 device_info = {}
+
+CRC_INIT = 0xDE
+
+
+def calc_crc_byte(crc, byte):
+    for i in range(8, 0, -1):
+        mix = (crc ^ byte) & 0x01
+        crc >>= 1
+        if mix > 0:
+            crc ^= 0x8C
+        byte >>= 1
+    return crc
+
+
+def calc_crc(arr):
+    c = CRC_INIT
+    for b in arr:
+        c = calc_crc_byte(c, b)
+    return c
 
 
 def init_device_info(ser):
@@ -45,6 +67,20 @@ def get_sensor_data(ser):
     return data_size, ser.read(data_size)
 
 
+def get_debug_data(ser):
+    ser.write(b'd')
+    data = ser.read(SIZEOF_DEBUG_STRUCT)
+    if len(data) != SIZEOF_DEBUG_STRUCT:
+        print("Debug data reading failed")
+        exit(-1)
+    debug_struct = {}
+    debug_struct['pwm'] = list(data[0:2])
+    debug_struct['isStopped'] = list(data[2:4])
+    debug_struct['iVal'] = [(data[4] * 256 + data[5]),
+                            (data[6] * 256 + data[7])]
+    return debug_struct
+
+
 def parse_control_struct(data):
     result = {
         'pollTimeSecs': data[0],
@@ -52,7 +88,7 @@ def parse_control_struct(data):
         'pwmMin': data[2],
         'pwmMax': data[3],
         'sensorNumber': data[4],
-        'sensorIds': list(data[5:9]),
+        'sensorIds': list(data[5:5 + data[4]]),
         'algoType': data[9],
         'algo': {}}
     if result['algoType'] == 0:
@@ -76,10 +112,15 @@ def get_control_structs(ser):
         print("Control structs reading failed")
         exit(-1)
     control_structs = []
+    crc_vals = []
     for i in range(ch_number):
         begin = i * SIZEOF_CONTROL_STRUCT
         end = (i + 1) * SIZEOF_CONTROL_STRUCT
         control_structs.append(parse_control_struct(data[begin:end]))
+        crc_vals.append(calc_crc(data[begin:end]))
+        print(data[begin:end].hex())
+        print("CRC: ", end='')
+        print(hex(crc_vals[i]))
     return control_structs
 
 
@@ -99,6 +140,7 @@ mutex_group.add_argument('--port', '-p', action='store', help='Serial port selec
 parser.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
 parser.add_argument('--info', '-i', action='store_true', help='Print device information')
 parser.add_argument('--control', '-c', action='store_true', help='Print control structs')
+parser.add_argument('--debug', '-d', action='store_true', help='Print debug data')
 
 args = parser.parse_args()
 
@@ -117,7 +159,10 @@ elif args.port is not None:
     elif args.sensors:
         print_sensors(serial)
     elif args.control:
-        print(yaml.dump(get_control_structs(serial), sort_keys=False, default_flow_style=False))
+        get_control_structs(serial)
+        # print(yaml.dump(get_control_structs(serial), sort_keys=False))
+    elif args.debug:
+        print(yaml.dump(get_debug_data(serial), default_flow_style=True, sort_keys=False))
 else:
     print("Port name must be provided")
 
