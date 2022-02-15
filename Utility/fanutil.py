@@ -7,10 +7,7 @@ SIZEOF_DEVICE_INFO = 13
 SIZEOF_CONTROL_STRUCT = 15
 SIZEOF_DEBUG_STRUCT = 8
 
-
 device_info = {}
-
-CRC_INIT = 0xDE
 
 
 def calc_crc_byte(crc, byte):
@@ -24,7 +21,7 @@ def calc_crc_byte(crc, byte):
 
 
 def calc_crc(arr):
-    c = CRC_INIT
+    c = 0xDE
     for b in arr:
         c = calc_crc_byte(c, b)
     return c
@@ -111,16 +108,16 @@ def get_control_structs(ser):
     if len(data) != data_size:
         print("Control structs reading failed")
         exit(-1)
+
     control_structs = []
-    crc_vals = []
     for i in range(ch_number):
         begin = i * SIZEOF_CONTROL_STRUCT
         end = (i + 1) * SIZEOF_CONTROL_STRUCT
         control_structs.append(parse_control_struct(data[begin:end]))
-        crc_vals.append(calc_crc(data[begin:end]))
-        print(data[begin:end].hex())
-        print("CRC: ", end='')
-        print(hex(crc_vals[i]))
+        crc = calc_crc(data[begin:end])
+        if crc:
+            print(f"CRC {i} check failed: {hex(crc)}")
+            exit(-1)
     return control_structs
 
 
@@ -159,7 +156,7 @@ elif args.port is not None:
     elif args.sensors:
         print_sensors(serial)
     elif args.control:
-        get_control_structs(serial)
+        cs = get_control_structs(serial)
         # print(yaml.dump(get_control_structs(serial), sort_keys=False))
     elif args.debug:
         print(yaml.dump(get_debug_data(serial), default_flow_style=True, sort_keys=False))
