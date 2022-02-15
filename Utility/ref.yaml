@@ -1,0 +1,57 @@
+---
+# The template configuration file for the mcu_fancontrol project
+# Used by fanutil.py. Should not be used directly
+
+# --- Sensor binding ---
+# Sensor types:
+# 1. DS18B20
+# 2. LM75
+#   Both types of sensors are match by the 'id' property.
+#   The hardware supports up 4 sensors of each type, 8 sensors in total.
+#   LM75 id directly corresponds to i2C address of the particular IC
+#   DS18B20 id is an abstract index that depends on the 1-Wire ROM search procedure.
+#   It can be matched with the real sensor via utility: fanutil.py -p [COM PORT] -i,
+sensors:
+
+# --- PWM channel binding ---
+# 1. channel
+#   Channel binding, the controller supports two pwm channels: 0 and 1
+# 2. minpwm
+#   Minimum PWM value for the selected channel, limits the PWM value from below during regulation
+#   Default: 0
+# 3. maxpwm
+#   Maximum PWM value for the selected channel, limits the PWM value from above during regulation
+#   Default: 80 (equals to 100% PWM)
+# 4. fanstop_hyst
+#   Fan start/stop hysteresis value in degrees Celsius,
+#   e.g. if controller defines lowest temperature setting as 50 and hysteresis equals to 5,
+#   the fan will be stopped after reaching 45 degrees and then will be started at 50 degrees.
+#   Set to 0 to disable fan stop function (default value)
+pwms:
+
+# --- Controller binding ---
+#   Links sensor declarations to pwm declarations with defined control algorithm
+#   Can link multiple sensors to the single pwm.
+#   sensor: Sensor binding entry. Can be multiple (up to 4), highest temperature will be used as a reference
+#   pwm: PWM channel binding entry
+# 1. mode
+#   Control algorithm, possible values:
+#   two_point - simple 2 point curve transformation
+#   pi - proportional-integral control algorithm
+#
+# 2. poll_time
+#   Sampling time in seconds
+# 3. set
+#   Special options for selected control algorithm (mode)
+#
+#   For 'two_point' it contains min and max allowed temperature: 'tmin', 'tmax'
+#   - min temperature maps to the 'minpwm' sensor value
+#   - max temperature maps to the 'maxpwm' sensorvalue
+#
+#   For 'pi' it contains:
+#   t - desired temperature setting
+#   kp - proportional coefficient
+#   ki - integral coefficient
+#   max_i - maximum allowed value for I component in percents, default value = 50
+controllers:
+
