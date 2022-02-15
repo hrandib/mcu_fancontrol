@@ -58,9 +58,9 @@ pwms:
 #   ki - integral coefficient
 #   max_i - maximum allowed value for I component in percents, default value = 50
 controllers:
-  - main_controller: { sensor: { case_sens, pcb_sens }, pwm: case_fan, mode: two_point,
-      poll: 4, set: { tmin: 50, tmax: 78 }
+  - main_controller: { sensor: [ case_sens, pcb_sens ], pwm: case_fan, mode: two_point,
+      set: { tmin: 50, tmax: 78 }, poll: 4
     }
-  - cha1: { sensor: power_sens, pwm: power_fan, mode: pi, poll: 5,
-     set: { t: 45, kp: 2, ki: 0.1, max_i: 60 }
+  - cha1: { sensor: [ power_sens ], pwm: power_fan, mode: pi,
+     set: { t: 45, kp: 2, ki: 0.1, max_i: 60 }, poll: 5
    }
