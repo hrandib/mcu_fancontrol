@@ -1,13 +1,13 @@
 from serial.tools import list_ports
 import serial
-import yaml
+from ruamel.yaml import YAML
 import argparse
+import sys
+import pprint
 
 SIZEOF_DEVICE_INFO = 13
 SIZEOF_CONTROL_STRUCT = 15
 SIZEOF_DEBUG_STRUCT = 8
-
-device_info = {}
 
 
 def calc_crc_byte(crc, byte):
@@ -27,19 +27,22 @@ def calc_crc(arr):
     return c
 
 
+device_info = {}
+
+
 def init_device_info(ser):
     ser.write(b'i')
     result = ser.read(SIZEOF_DEVICE_INFO)
     if len(result) != SIZEOF_DEVICE_INFO:
-        print(f"Device info read failed, data size = {len(result)}, it should be 13")
+        print(f"Device info read failed, data size = {len(result)} instead of 13")
         exit(-1)
     device_info['fw_ver_major'] = result[0]
     device_info['fw_ver_minor'] = result[1]
-    device_info["ch_number"] = result[2]
-    device_info["ch_types_mask"] = result[3]
+    device_info['ch_number'] = result[2]
+    device_info['ch_types_mask'] = result[3]
     sens_number = result[4]
-    device_info["sens_number"] = sens_number
-    device_info["ch_ids"] = result[5:(5 + sens_number)]
+    device_info['sens_number'] = sens_number
+    device_info['sensor_ids'] = result[5:(5 + sens_number)]
 
 
 def print_ids():
@@ -87,7 +90,8 @@ def parse_control_struct(data):
         'sensorNumber': data[4],
         'sensorIds': list(data[5:5 + data[4]]),
         'algoType': data[9],
-        'algo': {}}
+        'algo': {}
+    }
     if result['algoType'] == 0:
         result['algo']['tmin'] = data[10]
         result['algo']['tmax'] = data[11]
@@ -129,11 +133,80 @@ def print_sensors(ser):
     print(*values)
 
 
+# YAML config functions
+def add_config_sensors(config):
+    config['sensors'] = []
+    for i, s_id in enumerate(device_info['sensor_ids']):
+        s_type = 'DS18B20' if s_id & 0x80 else 'LM75'
+        s_id &= ~0x80
+        config['sensors'].append({f'S{i}': {'type': s_type, 'id': s_id}})
+
+
+PWM_MAX_RAW = 80
+PWM_MAX_PERCENT = 100
+SCALE_FACTOR_KP = 16
+SCALE_FACTOR_KI = 128
+
+
+def norm_pwm(pwm_raw):
+    return round((pwm_raw * PWM_MAX_PERCENT) / PWM_MAX_RAW)
+
+
+def to_raw_pwm(pwm):
+    return round((pwm * PWM_MAX_RAW) / PWM_MAX_PERCENT)
+
+
+def norm_kp(kp_raw):
+    return (kp_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KP * PWM_MAX_RAW)
+
+
+def to_raw_kp(kp):
+    result = round((kp * SCALE_FACTOR_KP * PWM_MAX_RAW) / PWM_MAX_PERCENT)
+    return result if result < 256 else 255
+
+
+def norm_ki(ki_raw):
+    return (ki_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KI * PWM_MAX_RAW)
+
+
+def to_raw_ki(ki):
+    result = round((ki * SCALE_FACTOR_KI * PWM_MAX_RAW) / PWM_MAX_PERCENT)
+    return result if result < 256 else 255
+
+
+PWM_NAME_PREFIX = "OUT"
+
+
+def add_config_pwms(config, cs):
+    config['pwms'] = []
+    for i in range(device_info['ch_number']):
+        config['pwms'].append({f'{PWM_NAME_PREFIX}{i}': {f'channel': i, 'minpwm': cs[i]['pwmMin'], 'maxpwm': cs[i]['pwmMax']}})
+        fanstop_hyst = cs[i]['fanStopHysteresis']
+        if fanstop_hyst:
+            config['pwms'][i][f'OUT{i}']['fanstop_hyst'] = fanstop_hyst
+
+
+def add_config_controllers(config, cs):
+    config['controllers'] = []
+    for i in range(device_info['ch_number']):
+        sensors = []
+        for sn in range(cs[i]['sensorNumber']):
+            sensors.append(f'S{sn}')
+        algo = cs[i]['algo']
+        mode = 'two_point' if cs[i]['algoType'] == 0 else 'pi'
+        settings = algo
+        poll_time = cs[i]['pollTimeSecs']
+        config['controllers'].append({f'CTRL{i}':
+            {'sensor': sensors, 'pwm': f'{PWM_NAME_PREFIX}{i}', 'mode': mode, 'set': settings, 'poll': poll_time}})
+
+
+# Parse args
 parser = argparse.ArgumentParser(description='Fan controller service utility')
 mutex_group = parser.add_mutually_exclusive_group()
 
 mutex_group.add_argument('--listports', '-l', action='store_true', help='List available serial ports')
 mutex_group.add_argument('--port', '-p', action='store', help='Serial port selection')
+parser.add_argument('--read', '-r', action='store', help='Retrieve current config and store it to file')
 parser.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
 parser.add_argument('--info', '-i', action='store_true', help='Print device information')
 parser.add_argument('--control', '-c', action='store_true', help='Print control structs')
@@ -157,10 +230,23 @@ elif args.port is not None:
         print_sensors(serial)
     elif args.control:
         cs = get_control_structs(serial)
-        # print(yaml.dump(get_control_structs(serial), sort_keys=False))
+        yaml = YAML()
+        yaml.dump(get_control_structs(serial), sys.stdout)
+    elif args.read:
+        cs = get_control_structs(serial)
+        f = open("ref.yaml", "r")
+        yaml = YAML()
+        yaml.default_flow_style = True
+        config_template = yaml.load(f.read())
+        f.close()
+        add_config_sensors(config_template)
+        add_config_pwms(config_template, cs)
+        add_config_controllers(config_template, cs)
+        f = open(args.read, "w")
+        yaml.dump(config_template, f)
+        f.close()
     elif args.debug:
-        print(yaml.dump(get_debug_data(serial), default_flow_style=True, sort_keys=False))
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(get_debug_data(serial))
 else:
     print("Port name must be provided")
-
-
