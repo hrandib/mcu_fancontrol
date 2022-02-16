@@ -19,19 +19,19 @@ sensors:
 # 1. channel
 #   Channel binding, the controller supports two pwm channels: 0 and 1
 # 2. minpwm
-#   Minimum PWM value for the selected channel, limits the PWM value from below during regulation
+#   Minimum PWM value in % for the selected channel, limits the PWM value from below during regulation
 #   Default: 0
 # 3. maxpwm
-#   Maximum PWM value for the selected channel, limits the PWM value from above during regulation
-#   Default: 80 (equals to 100% PWM)
+#   Maximum PWM value in % for the selected channel, limits the PWM value from above during regulation
+#   Default: 100
 # 4. fanstop_hyst
 #   Fan start/stop hysteresis value in degrees Celsius,
 #   e.g. if controller defines lowest temperature setting as 50 and hysteresis equals to 5,
 #   the fan will be stopped after reaching 45 degrees and then will be started at 50 degrees.
 #   Set to 0 to disable fan stop function (default value)
 pwms:
-  - case_fan: { channel: 0, minpwm: 0, maxpwm: 80, fanstop_hyst: 3 }
-  - power_fan: { channel: 1, minpwm: 30, maxpwm: 60 }
+  - case_fan: { channel: 0, minpwm: 0, maxpwm: 100, fanstop_hyst: 3 }
+  - power_fan: { channel: 1, minpwm: 25, maxpwm: 75 }
 
 # --- Controller binding ---
 #   Links sensor declarations to pwm declarations with defined control algorithm

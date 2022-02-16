@@ -45,20 +45,22 @@ def init_device_info(ser):
     device_info['sensor_ids'] = result[5:(5 + sens_number)]
 
 
-def print_ids():
+def format_ids():
     ids_string = "Sensor IDs:  "
     for n in range(device_info['sens_number']):
-        ids_string += f"0x{(device_info['ch_ids'][n]):02x} "
-    print(ids_string)
+        ids_string += f"0x{(device_info['sensor_ids'][n]):02x} "
+    return ids_string
 
 
-def print_device_info():
-    print(f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}")
-    print(f"Channels number: {device_info['ch_number']}")
+def format_device_info():
+    result = ""
+    result = f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}\n"
+    f"Channels number: {device_info['ch_number']}\n"
     for ch in range(device_info['ch_number']):
-        print(f"Channel {ch} type: {'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'}")
-    print(f"Sensors number: {device_info['sens_number']}")
-    print_ids()
+        result += f"Channel {ch} type: {'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'}\n"
+    result += f"Sensors amount: {device_info['sens_number']}\n"
+    result += format_ids()
+    return result
 
 
 def get_sensor_data(ser):
@@ -133,15 +135,6 @@ def print_sensors(ser):
     print(*values)
 
 
-# YAML config functions
-def add_config_sensors(config):
-    config['sensors'] = []
-    for i, s_id in enumerate(device_info['sensor_ids']):
-        s_type = 'DS18B20' if s_id & 0x80 else 'LM75'
-        s_id &= ~0x80
-        config['sensors'].append({f'S{i}': {'type': s_type, 'id': s_id}})
-
-
 PWM_MAX_RAW = 80
 PWM_MAX_PERCENT = 100
 SCALE_FACTOR_KP = 16
@@ -157,6 +150,9 @@ norm_max_i = norm_pwm
 
 def to_raw_pwm(pwm):
     return round((pwm * PWM_MAX_RAW) / PWM_MAX_PERCENT)
+
+
+to_raw_max_i = to_raw_pwm
 
 
 def norm_kp(kp_raw):
@@ -177,21 +173,30 @@ def to_raw_ki(ki):
     return result if result < 256 else 255
 
 
+# YAML config functions
+def add_config_sensors(config):
+    config['sensors'] = {}
+    for i, s_id in enumerate(device_info['sensor_ids']):
+        s_type = 'DS18B20' if s_id & 0x80 else 'LM75'
+        s_id &= ~0x80
+        config['sensors'][f'S{i}'] = {'type': s_type, 'id': s_id}
+
+
 PWM_NAME_PREFIX = "OUT"
 
 
 def add_config_pwms(config, cs):
-    config['pwms'] = []
+    config['pwms'] = {}
     for i in range(device_info['ch_number']):
-        config['pwms'].append({f'{PWM_NAME_PREFIX}{i}':
-            {f'channel': i, 'minpwm': norm_pwm(cs[i]['pwmMin']), 'maxpwm': norm_pwm(cs[i]['pwmMax'])}})
+        config['pwms'][f'{PWM_NAME_PREFIX}{i}'] = {f'channel': i, 'minpwm': norm_pwm(cs[i]['pwmMin']),
+                                                   'maxpwm': norm_pwm(cs[i]['pwmMax'])}
         fanstop_hyst = cs[i]['fanStopHysteresis']
         if fanstop_hyst:
-            config['pwms'][i][f'OUT{i}']['fanstop_hyst'] = fanstop_hyst
+            config['pwms'][f'OUT{i}']['fanstop_hyst'] = fanstop_hyst
 
 
 def add_config_controllers(config, cs):
-    config['controllers'] = []
+    config['controllers'] = {}
     for i in range(device_info['ch_number']):
         sensors = []
         for sn in range(cs[i]['sensorNumber']):
@@ -205,8 +210,59 @@ def add_config_controllers(config, cs):
             settings['ki'] = norm_ki(settings['ki'])
             settings['max_i'] = norm_max_i(settings['max_i'])
         poll_time = cs[i]['pollTimeSecs']
-        config['controllers'].append({f'CTRL{i}':
-            {'sensor': sensors, 'pwm': f'{PWM_NAME_PREFIX}{i}', 'mode': mode, 'set': settings, 'poll': poll_time}})
+        config['controllers'][f'CTRL{i}'] = {'sensor': sensors, 'pwm': f'{PWM_NAME_PREFIX}{i}', 'mode': mode,
+                                             'set': settings, 'poll': poll_time}
+
+
+def get_sensor_raw_id(sensor):
+    if sensor['type'] == 'DS18B20':
+        result = sensor['id'] | 0x80
+    else:
+        result = sensor['id']
+    return result
+
+
+# Upload config to the controller
+def to_raw_config(conf):
+    packet = bytearray(SIZEOF_CONTROL_STRUCT * device_info['ch_number'])
+    print(conf['controllers'])
+    pwms = conf['pwms']
+    all_sensors = conf['sensors']
+    ch = 0
+    for name, settings in conf['controllers'].items():
+        data = bytearray(SIZEOF_CONTROL_STRUCT)
+        data[0] = settings['poll']
+        pwm = pwms[settings['pwm']]
+        data[1] = pwm.get('fanstop_hyst', 0)
+        data[2] = to_raw_pwm(pwm['minpwm'])
+        data[3] = to_raw_pwm(pwm['maxpwm'])
+
+        data[4] = len(settings['sensor'])
+        for i, s_name in enumerate(settings['sensor']):
+            data[5 + i] = get_sensor_raw_id(all_sensors[s_name])
+        algo = settings['set']
+        if settings['mode'] == 'two_point':
+            data[9] = 0
+            data[10] = algo['tmin']
+            data[11] = algo['tmax']
+        else:
+            data[9] = 1
+            data[10] = algo['t']
+            data[11] = to_raw_kp(algo['kp'])
+            data[12] = to_raw_ki(algo['ki'])
+            data[13] = to_raw_max_i(algo['max_i'])
+        data[14] = calc_crc(data[: -1])
+        packet[SIZEOF_CONTROL_STRUCT * ch:] = data
+        ch += 1
+    return packet
+
+
+def update_header(text):
+    origin = '# The template configuration file for the mcu_fancontrol project, must not be changed by human'
+    actual = '# The configuration file for the particular device\n'
+    actual += '# --- Device info ---\n# '
+    actual += '# '.join(format_device_info().splitlines(True))
+    return text.replace(origin, actual)
 
 
 # Parse args
@@ -215,7 +271,9 @@ mutex_group = parser.add_mutually_exclusive_group()
 
 mutex_group.add_argument('--listports', '-l', action='store_true', help='List available serial ports')
 mutex_group.add_argument('--port', '-p', action='store', help='Serial port selection')
-parser.add_argument('--read', '-r', action='store', help='Retrieve current config and store it to file')
+parser.add_argument('--read', '-r', action='store', help='Retrieve current config and store it to file, expects file '
+                                                         'name')
+parser.add_argument('--write', '-w', action='store', help='Upload config file to the controller, expects file name')
 parser.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
 parser.add_argument('--info', '-i', action='store_true', help='Print device information')
 parser.add_argument('--control', '-c', action='store_true', help='Print control structs')
@@ -232,7 +290,7 @@ elif args.port is not None:
     serial.reset_input_buffer()
     init_device_info(serial)
     if args.info:
-        print_device_info()
+        print(format_device_info())
         print("Sensor data: ", end='')
         print_sensors(serial)
     elif args.sensors:
@@ -244,16 +302,30 @@ elif args.port is not None:
     elif args.read:
         cs = get_control_structs(serial)
         f = open("ref.yaml", "r")
+        config_text = update_header(f.read())
         yaml = YAML()
         yaml.default_flow_style = True
-        config_template = yaml.load(f.read())
+        config_template = yaml.load(config_text)
         f.close()
         add_config_sensors(config_template)
         add_config_pwms(config_template, cs)
         add_config_controllers(config_template, cs)
-        # f = open(args.read, "w")
-        yaml.dump(config_template, sys.stdout)
-        # f.close()
+        f = open(args.read, "w")
+        yaml.dump(config_template, f)
+        f.close()
+    elif args.write:
+        yaml = YAML()
+        f = open(args.write, "r")
+        config = yaml.load(f)
+        f.close()
+        data = to_raw_config(config)
+        serial.write(b'w')
+        serial.write(data)
+        status = int(serial.read(1))
+        if status == device_info['ch_number'] * 2:
+            print("Config upload finished successfully")
+        else:
+            print(f"Config upload failed with status: {status}")
     elif args.debug:
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(get_debug_data(serial))

@@ -1,6 +1,4 @@
----
-# The template configuration file for the mcu_fancontrol project
-# Used by fanutil.py. Should not be used directly
+# The template configuration file for the mcu_fancontrol project, must not be changed by human
 
 # --- Sensor binding ---
 # Sensor types:
@@ -8,7 +6,7 @@
 # 2. LM75
 #   Both types of sensors are match by the 'id' property.
 #   The hardware supports up 4 sensors of each type, 8 sensors in total.
-#   LM75 id directly corresponds to i2C address of the particular IC
+#   LM75 id directly corresponds to I2C address of the particular IC
 #   DS18B20 id is an abstract index that depends on the 1-Wire ROM search procedure.
 #   It can be matched with the real sensor via utility: fanutil.py -p [COM PORT] -i
 sensors:
@@ -18,10 +16,10 @@ sensors:
 #   Channel binding, the controller supports two pwm channels: 0 and 1
 # 2. minpwm
 #   Minimum PWM value in % for the selected channel, limits the PWM value from below during regulation
-#   Default: 0%
+#   Default: 0
 # 3. maxpwm
 #   Maximum PWM value in % for the selected channel, limits the PWM value from above during regulation
-#   Default: 100%
+#   Default: 100
 # 4. fanstop_hyst
 #   Fan start/stop hysteresis value in degrees Celsius,
 #   e.g. if controller defines lowest temperature setting as 50 and hysteresis equals to 5,
