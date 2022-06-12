@@ -2,9 +2,9 @@
 # Executable:
 #   Powershell
 # Command line arguments:
-#   C:/Projects/mcu_fancontrol/scripts/flash_mcu.ps1 %{ActiveProject:FileBaseName}.out
+#   ... /mcu_fancontrol/scripts/flash_mcu.ps1 %{ActiveProject:FileBaseName}.out
 # Working directory:
-#   %{buildDir}\install-root
+#   %{CurrentBuild:QbsBuildRoot}\install-root
 
 $outFile = $args[0]
 [Boolean]$writeEeepromFlag = $args[1] -or $False
