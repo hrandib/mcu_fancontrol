@@ -47,6 +47,7 @@ CppApplication {
         "--config_def", "_CSTACK_SIZE=0x80",
         "--config_def", "_HEAP_SIZE=0",
         "--merge_duplicate_sections",
+        "--config", product.sourceDirectory + "/config/lnkstm8s103f3.icf",
     ]
 
     cpp.includePaths: [
@@ -55,13 +56,6 @@ CppApplication {
         "pwm",
         "controller",
     ]
-
-    Group {
-        name: "Linker script"
-        prefix: cpp.toolchainInstallPath + "/../config/"
-        fileTags: ["linkerscript"]
-        files: ["lnkstm8s103f3.icf"]
-    }
 
     Group {
         name: "Compiled object file"
@@ -114,6 +108,8 @@ CppApplication {
         ]
     }
 
+    files: ["main.cpp"]
+
     Rule {
         inputs: ["application"]
         outputFileTags: ["print_size"]
@@ -136,7 +132,6 @@ CppApplication {
         }
     }
 
-    files: ["main.cpp"]
 } //CppApplication
 
 } //Project
