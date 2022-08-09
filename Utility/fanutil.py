@@ -321,7 +321,7 @@ elif args.port is not None:
         data = to_raw_config(config)
         serial.write(b'w')
         serial.write(data)
-        status = int(serial.read(1))
+        status = int.from_bytes(serial.read(1), 'little')
         if status == device_info['ch_number'] * 2:
             print("Config upload finished successfully")
         else:
