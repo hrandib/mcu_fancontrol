@@ -20,20 +20,18 @@
  * SOFTWARE.
  */
 
-#ifndef DEVICE_INFO_H
-#define DEVICE_INFO_H
+#include "device_info.h"
 
-#include <stdint.h>
+// clang-format off
 
-struct DeviceInfo
+// Default device info in the eeprom after uploading the firmware
+#pragma location = ".eeprom.noinit"
+const DeviceInfo deviceInfo =
 {
-    const uint8_t FW_MAJOR;
-    const uint8_t FW_MINOR;
-
-    const uint8_t CHANNELS_NUMBER;
-    const uint8_t CH_ANALOG_MASK;
+    .FW_MAJOR = 1,
+    .FW_MINOR = 0,
+    .CHANNELS_NUMBER = CH_MAX_NUMBER,
+    .CH_ANALOG_MASK = 0x01
 };
 
-extern DeviceInfo deviceInfo;
-
-#endif // DEVICE_INFO_H
+// clang-format on

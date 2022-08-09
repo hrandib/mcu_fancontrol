@@ -103,8 +103,8 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
 static uint8_t WriteControlStruct()
 {
     uint8_t result_status = 0;
-    ControlStruct cs[CH_NUMBER];
-    for(uint8_t ch = 0; ch < CH_NUMBER; ++ch) {
+    ControlStruct cs[CH_MAX_NUMBER];
+    for(uint8_t ch = 0; ch < CH_MAX_NUMBER; ++ch) {
         Crc::Crc8 crc;
         uint8_t* arr = (uint8_t*)&cs[ch];
         uint8_t c;
@@ -123,12 +123,12 @@ static uint8_t WriteControlStruct()
             break;
         }
     }
-    if(result_status == CH_NUMBER) {
+    if(result_status == CH_MAX_NUMBER) {
         using namespace Mem;
         Unlock<Eeprom>();
         sensorMutex.lock();
         if(IsUnlocked<Eeprom>()) {
-            for(uint8_t i = 0; i < CH_NUMBER; ++i) {
+            for(uint8_t i = 0; i < CH_MAX_NUMBER; ++i) {
                 *const_cast<ControlStruct*>(&controlStruct[i]) = cs[i];
                 ++result_status;
             }

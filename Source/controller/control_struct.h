@@ -25,8 +25,8 @@
 
 #include <stdint.h>
 
-#define CH_NUMBER 2
 #define CRC_INIT_VAL 0xDE
+#define CH_MAX_NUMBER 2
 
 struct ControlStruct
 {
@@ -58,6 +58,6 @@ struct ControlStruct
     uint8_t crc;
 };
 
-extern const ControlStruct controlStruct[CH_NUMBER];
+extern const ControlStruct controlStruct[CH_MAX_NUMBER];
 
 #endif // CONTROL_STRUCT_H

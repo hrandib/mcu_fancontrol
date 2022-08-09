@@ -26,7 +26,7 @@
 
 // Default config in the eeprom after uploading the firmware
 #pragma location = ".eeprom.noinit"
-const ControlStruct controlStruct[CH_NUMBER] =
+const ControlStruct controlStruct[CH_MAX_NUMBER] =
   {
     {   // channel 0
         .pollTimeSecs = 2,              // poll time in secs

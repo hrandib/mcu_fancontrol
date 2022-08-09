@@ -21,6 +21,7 @@
  */
 
 #include "controller.h"
+#include "device_info.h"
 
 static void InitFanStopPin();
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
@@ -30,12 +31,12 @@ static void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh);
 
 typedef Mcudrv::Pa3 FanStopPin;
 
-bool isStopped[CH_NUMBER];
-int16_t iVal[CH_NUMBER];
+bool isStopped[CH_MAX_NUMBER];
+int16_t iVal[CH_MAX_NUMBER];
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
-    uint8_t pollTimeCounter[CH_NUMBER]; // uninit as intended
+    uint8_t pollTimeCounter[CH_MAX_NUMBER]; // uninit as intended
     if(controlStruct[1].fanStopHysteresis) {
         InitFanStopPin();
     }
@@ -48,7 +49,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
             sensorHandler.Convert();
         }
         sleep(MS2ST(100));
-        for(uint8_t i = 0; i < CH_NUMBER; ++i) {
+        for(uint8_t i = 0; i < CH_MAX_NUMBER; ++i) {
             if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
                 Worker(i, controlStruct[i], sensorHandler);
                 pollTimeCounter[i] = 0;

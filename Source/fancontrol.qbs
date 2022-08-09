@@ -27,6 +27,19 @@ Product {
             "--mfc",
             "--diag_suppress=Pa137,Go004,Go005",
         ]
+
+        cpp.includePaths: [
+            "config"
+        ]
+
+        Group {
+            name: "DeviceInfo"
+            prefix: "config/"
+            files: [
+                "device_info.h",
+                "device_info.cpp"
+            ]
+        }
     }
 }
 
