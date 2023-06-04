@@ -30,7 +30,7 @@ const DeviceInfo deviceInfo =
 {
     .FW_MAJOR = 1,
     .FW_MINOR = 1,
-    .CH_ENABLE_MASK = 0x01,
+    .CH_ENABLE_MASK = 0x03,
     .CH_ANALOG_MASK = 0x01
 };
 
