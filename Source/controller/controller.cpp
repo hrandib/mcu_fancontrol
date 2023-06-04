@@ -29,6 +29,7 @@ static uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStru
 static uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs);
 static void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh);
 
+// Sets to high logic level in fan stop condition for the second channel
 typedef Mcudrv::Pa3 FanStopPin;
 
 bool isStopped[CH_MAX_NUMBER];
