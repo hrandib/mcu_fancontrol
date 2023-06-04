@@ -5,11 +5,11 @@ import argparse
 import sys
 import pprint
 
-# 16 bytes of DeviceInfo struct, 1+8 bytes of sensor IDs array
-SIZEOF_DEVICE_INFO = 25
+# 20 bytes of DeviceInfo struct, 1+8 bytes of sensor IDs array
+SIZEOF_DEVICE_INFO = 29
 SIZEOF_CONTROL_STRUCT = 15
 SIZEOF_DEBUG_STRUCT = 8
-MAX_CH_NUMBER = 2
+CH_MAX_NUMBER = 2
 
 def calc_crc_byte(crc, byte):
     for i in range(8, 0, -1):
@@ -41,11 +41,12 @@ def init_device_info(ser):
         exit(-1)
     device_info['fw_ver_major'] = get_integer(result, 0)
     device_info['fw_ver_minor'] = get_integer(result, 4)
-    device_info['ch_mask'] = get_integer(result, 8)
-    device_info['ch_types_mask'] = get_integer(result, 12)
-    sens_number = result[16]
+    device_info['ch_number'] = get_integer(result, 8)
+    device_info['ch_mask'] = get_integer(result, 12)
+    device_info['ch_types_mask'] = get_integer(result, 16)
+    sens_number = result[20]
     device_info['sens_number'] = sens_number
-    device_info['sensor_ids'] = result[17:(17 + sens_number)]
+    device_info['sensor_ids'] = result[21:21 + sens_number]
 
 
 def format_ids():
@@ -56,12 +57,13 @@ def format_ids():
 
 
 def format_device_info():
+    ch_number = device_info['ch_number'];
     result = (f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}\n"
-    f"Channels mask: {device_info['ch_mask']}\n")
-    for ch in range(MAX_CH_NUMBER):
-        state = 'Active' if device_info['ch_mask'] & (1 << ch) else 'Disabled'
-        type = 'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'
-        result += f"Channel {ch} mode: {type}, {state}\n"
+    f"Channels number: {ch_number}\n")
+    for ch in range(CH_MAX_NUMBER):
+        if device_info['ch_mask'] & (1 << ch):
+            type = 'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'
+            result += f"Channel {ch} mode: {type}\n"
     result += f"Sensors amount: {device_info['sens_number']}\n"
     result += format_ids()
     return result
@@ -111,15 +113,14 @@ def parse_control_struct(data):
 
 def get_control_structs(ser):
     ser.write(b'r')
-    ch_number = device_info['ch_mask']
-    data_size = ch_number * SIZEOF_CONTROL_STRUCT
+    data_size = CH_MAX_NUMBER * SIZEOF_CONTROL_STRUCT
     data = ser.read(data_size)
     if len(data) != data_size:
         print("Control structs reading failed")
         exit(-1)
 
     control_structs = []
-    for i in range(ch_number):
+    for i in range(CH_MAX_NUMBER):
         begin = i * SIZEOF_CONTROL_STRUCT
         end = (i + 1) * SIZEOF_CONTROL_STRUCT
         control_structs.append(parse_control_struct(data[begin:end]))

@@ -30,8 +30,9 @@ const DeviceInfo deviceInfo =
 {
     .FW_MAJOR = 1,
     .FW_MINOR = 1,
+    .CHANNELS = 2,
     .CH_ENABLE_MASK = 0x03,
-    .CH_ANALOG_MASK = 0x01
+    .CH_ANALOG_MASK = 0x00
 };
 
 // clang-format on
