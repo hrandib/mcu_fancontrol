@@ -53,7 +53,7 @@ struct BaseStream
     length_t Write(T (&buf)[N])
     {
         static_assert(sizeof(T) == 1, "The type size must be 1");
-        return Write(buf, N - 1);
+        return Write(buf, N);
     }
 };
 
