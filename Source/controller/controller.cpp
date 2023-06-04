@@ -37,7 +37,7 @@ int16_t iVal[CH_MAX_NUMBER];
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
-    uint8_t pollTimeCounter[CH_MAX_NUMBER]; // uninit as intended
+    uint8_t pollTimeCounter[CH_MAX_NUMBER] = {};
     if(controlStruct[1].fanStopHysteresis) {
         InitFanStopPin();
     }
@@ -51,7 +51,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
         }
         sleep(MS2ST(100));
         for(uint8_t i = 0; i < CH_MAX_NUMBER; ++i) {
-            if(++pollTimeCounter[i] >= controlStruct[i].pollTimeSecs) {
+            if(++pollTimeCounter[i] == controlStruct[i].pollTimeSecs) {
                 Worker(i, controlStruct[i], sensorHandler);
                 pollTimeCounter[i] = 0;
             }
