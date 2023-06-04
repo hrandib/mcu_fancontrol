@@ -5,10 +5,11 @@ import argparse
 import sys
 import pprint
 
-SIZEOF_DEVICE_INFO = 13
+# 16 bytes of DeviceInfo struct, 1+8 bytes of sensor IDs array
+SIZEOF_DEVICE_INFO = 25
 SIZEOF_CONTROL_STRUCT = 15
 SIZEOF_DEBUG_STRUCT = 8
-
+MAX_CH_NUMBER = 2
 
 def calc_crc_byte(crc, byte):
     for i in range(8, 0, -1):
@@ -29,20 +30,22 @@ def calc_crc(arr):
 
 device_info = {}
 
+def get_integer(byte_arr, index):
+    return int.from_bytes(byte_arr[index:index + 4], 'big', signed="False")
 
 def init_device_info(ser):
     ser.write(b'i')
     result = ser.read(SIZEOF_DEVICE_INFO)
     if len(result) != SIZEOF_DEVICE_INFO:
-        print(f"Device info read failed, data size = {len(result)} instead of 13")
+        print(f"Device info read failed, data size = {len(result)} != 25")
         exit(-1)
-    device_info['fw_ver_major'] = result[0]
-    device_info['fw_ver_minor'] = result[1]
-    device_info['ch_number'] = result[2]
-    device_info['ch_types_mask'] = result[3]
-    sens_number = result[4]
+    device_info['fw_ver_major'] = get_integer(result, 0)
+    device_info['fw_ver_minor'] = get_integer(result, 4)
+    device_info['ch_mask'] = get_integer(result, 8)
+    device_info['ch_types_mask'] = get_integer(result, 12)
+    sens_number = result[16]
     device_info['sens_number'] = sens_number
-    device_info['sensor_ids'] = result[5:(5 + sens_number)]
+    device_info['sensor_ids'] = result[17:(17 + sens_number)]
 
 
 def format_ids():
@@ -53,15 +56,15 @@ def format_ids():
 
 
 def format_device_info():
-    result = ""
-    result = f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}\n"
-    f"Channels number: {device_info['ch_number']}\n"
-    for ch in range(device_info['ch_number']):
-        result += f"Channel {ch} type: {'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'}\n"
+    result = (f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}\n"
+    f"Channels mask: {device_info['ch_mask']}\n")
+    for ch in range(MAX_CH_NUMBER):
+        state = 'Active' if device_info['ch_mask'] & (1 << ch) else 'Disabled'
+        type = 'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'
+        result += f"Channel {ch} mode: {type}, {state}\n"
     result += f"Sensors amount: {device_info['sens_number']}\n"
     result += format_ids()
     return result
-
 
 def get_sensor_data(ser):
     ser.write(b't')
@@ -108,7 +111,7 @@ def parse_control_struct(data):
 
 def get_control_structs(ser):
     ser.write(b'r')
-    ch_number = device_info['ch_number']
+    ch_number = device_info['ch_mask']
     data_size = ch_number * SIZEOF_CONTROL_STRUCT
     data = ser.read(data_size)
     if len(data) != data_size:
@@ -187,7 +190,7 @@ PWM_NAME_PREFIX = "OUT"
 
 def add_config_pwms(config, cs):
     config['pwms'] = {}
-    for i in range(device_info['ch_number']):
+    for i in range(device_info['ch_mask']):
         config['pwms'][f'{PWM_NAME_PREFIX}{i}'] = {f'channel': i, 'minpwm': norm_pwm(cs[i]['pwmMin']),
                                                    'maxpwm': norm_pwm(cs[i]['pwmMax'])}
         fanstop_hyst = cs[i]['fanStopHysteresis']
@@ -197,7 +200,7 @@ def add_config_pwms(config, cs):
 
 def add_config_controllers(config, cs):
     config['controllers'] = {}
-    for i in range(device_info['ch_number']):
+    for i in range(device_info['ch_mask']):
         sensors = []
         for sn in range(cs[i]['sensorNumber']):
             sensors.append(f'S{sn}')
@@ -224,7 +227,7 @@ def get_sensor_raw_id(sensor):
 
 # Upload config to the controller
 def to_raw_config(conf):
-    packet = bytearray(SIZEOF_CONTROL_STRUCT * device_info['ch_number'])
+    packet = bytearray(SIZEOF_CONTROL_STRUCT * device_info['ch_mask'])
     print(conf['controllers'])
     pwms = conf['pwms']
     all_sensors = conf['sensors']
@@ -322,7 +325,7 @@ elif args.port is not None:
         serial.write(b'w')
         serial.write(data)
         status = int.from_bytes(serial.read(1), 'little')
-        if status == device_info['ch_number'] * 2:
+        if status == device_info['ch_mask'] * 2:
             print("Config upload finished successfully")
         else:
             print(f"Config upload failed with status: {status}")
