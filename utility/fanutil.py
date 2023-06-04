@@ -121,13 +121,14 @@ def get_control_structs(ser):
 
     control_structs = []
     for i in range(CH_MAX_NUMBER):
-        begin = i * SIZEOF_CONTROL_STRUCT
-        end = (i + 1) * SIZEOF_CONTROL_STRUCT
-        control_structs.append(parse_control_struct(data[begin:end]))
-        crc = calc_crc(data[begin:end])
-        if crc:
-            print(f"CRC {i} check failed: {hex(crc)}")
-            exit(-1)
+        if device_info['ch_mask'] & (1 << i):
+            begin = i * SIZEOF_CONTROL_STRUCT
+            end = (i + 1) * SIZEOF_CONTROL_STRUCT
+            control_structs.append(parse_control_struct(data[begin:end]))
+            crc = calc_crc(data[begin:end])
+            if crc:
+                print(f"CRC {i} check failed: {hex(crc)}")
+                exit(-1)
     return control_structs
 
 
