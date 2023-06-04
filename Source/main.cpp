@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "iwdg.h"
 #include "pinlist.h"
 #include "scm_utils.h"
 #include "sensor_handler.h"
@@ -40,6 +41,9 @@ static void InitPeripherals()
 
 int main()
 {
+    // Must be enabled in option bytes
+    Mcudrv::Iwdg::SetPeriod(Mcudrv::Iwdg::P_1s);
+
     InitPeripherals();
     enableInterrupts();
     OS::run();

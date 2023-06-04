@@ -26,8 +26,10 @@
 #include "crc.h"
 #include "device_info.h"
 #include "flash.h"
+#include "iwdg.h"
 #include "scm_utils.h"
 #include "sensor_handler.h"
+#include "timers.h"
 #include "uart.h"
 
 using namespace Mcudrv;
@@ -51,6 +53,7 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
 
     InitUart();
     while(true) {
+        Mcudrv::Iwdg::Refresh();
         uint8_t c;
         while(Uart::Getch(c)) {
             switch(c) {
