@@ -51,7 +51,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
         }
         sleep(MS2ST(100));
         for(uint8_t i = 0; i < CH_MAX_NUMBER; ++i) {
-            if(++pollTimeCounter[i] == controlStruct[i].pollTimeSecs) {
+            if(deviceInfo.CH_ENABLE_MASK & (1U << i) && ++pollTimeCounter[i] == controlStruct[i].pollTimeSecs) {
                 Worker(i, controlStruct[i], sensorHandler);
                 pollTimeCounter[i] = 0;
             }

@@ -31,12 +31,12 @@ struct DeviceInfo
 {
     const uint8_t FW_MAJOR;
     const uint8_t FW_MINOR;
-
+    // Controller active channels mask, yaml export will drop inactive channels
     const uint8_t CH_ENABLE_MASK;
+    // Define channels mode, 1 - Analog, 0 - PWM
     const uint8_t CH_ANALOG_MASK;
 };
 
 extern const DeviceInfo deviceInfo;
-
 
 #endif // DEVICE_INFO_H
