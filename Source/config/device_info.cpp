@@ -29,8 +29,8 @@
 const DeviceInfo deviceInfo =
 {
     .FW_MAJOR = 1,
-    .FW_MINOR = 0,
-    .CHANNELS_NUMBER = CH_MAX_NUMBER,
+    .FW_MINOR = 1,
+    .CH_ENABLE_MASK = 0x01,
     .CH_ANALOG_MASK = 0x01
 };
 

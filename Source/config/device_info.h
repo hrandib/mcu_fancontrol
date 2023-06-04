@@ -32,7 +32,7 @@ struct DeviceInfo
     const uint8_t FW_MAJOR;
     const uint8_t FW_MINOR;
 
-    const uint8_t CHANNELS_NUMBER;
+    const uint8_t CH_ENABLE_MASK;
     const uint8_t CH_ANALOG_MASK;
 };
 
