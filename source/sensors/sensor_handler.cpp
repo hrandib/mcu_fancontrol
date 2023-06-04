@@ -158,6 +158,7 @@ uint8_t SensorHandler::InitDs18(uint8_t indexOffset)
     for(uint8_t i = 0; i < sensorsNumber; ++i) {
         sensorIds_[i + indexOffset] = DS18_ID_FLAG | i;
     }
+    Ds18::SetResolution(Ds18::RES_9BIT);
     return sensorsNumber + indexOffset;
 }
 
