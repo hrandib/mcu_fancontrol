@@ -48,8 +48,8 @@ pwms:
 #
 #   For 'pi' it contains:
 #   t - desired temperature setting
-#   kp - proportional coefficient
-#   ki - integral coefficient
+#   kp - proportional coefficient, maximum allowed value = 20, higher values will be truncated to this limit
+#   ki - integral coefficient, maximum allowed value = 2.5, higher values will be truncated to this limit
 #   max_i - maximum allowed value for I component in percents, default value = 50
 controllers:
 

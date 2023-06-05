@@ -338,7 +338,7 @@ mutex_args.add_argument('--read', '-r', action='store', help='Retrieve current c
 mutex_args.add_argument('--write', '-w', action='store', help='Upload config file to the controller, expects file name')
 mutex_args.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
 mutex_args.add_argument('--info', '-i', action='store_true', help='Print device information')
-mutex_args.add_argument('--control', '-c', action='store_true', help='Print control structs')
+mutex_args.add_argument('--control', '-c', action='store_true', help='Print control structs, contain raw values')
 mutex_args.add_argument('--debug', '-d', action='store_true', help='Print debug data')
 mutex_args.add_argument('--set-channels', '-e', nargs='+', type=int, action='store', help='Set active channels')
 mutex_args.add_argument('--set-analog', '-a', nargs='*', type=int, action='store', help='Set analog channels')
