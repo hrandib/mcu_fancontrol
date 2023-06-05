@@ -46,6 +46,7 @@ static void InitUart()
 }
 
 static uint8_t WriteControlStruct();
+static uint8_t WriteChannelsConfig();
 
 SCM_TASK(ShellHandler, OS::pr0, 200)
 {
@@ -68,6 +69,11 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                 case 'w':
                     sleep(MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1);
                     Uart::Putch(WriteControlStruct());
+                    break;
+                // Set active channels
+                case 'e':
+                    sleep(MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1);
+                    Uart::Putch(WriteChannelsConfig());
                     break;
                 // Read config
                 case 'r':
@@ -103,7 +109,7 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
     }
 }
 
-static uint8_t WriteControlStruct()
+uint8_t WriteControlStruct()
 {
     uint8_t result_status = 0;
     ControlStruct cs[CH_MAX_NUMBER];
@@ -140,4 +146,24 @@ static uint8_t WriteControlStruct()
         sensorMutex.unlock();
     }
     return result_status;
+}
+
+uint8_t WriteChannelsConfig()
+{
+    using namespace Mem;
+    uint8_t data[3];
+    uint8_t result = 0;
+    Crc::Crc8 crc;
+    crc.Init(CRC_INIT_VAL);
+    for(uint8_t i = 0; i < 3; ++i) {
+        result += Uart::Getch(data[i]);
+        crc(data[i]);
+    }
+    result += !crc.GetResult();
+    if(result == 4) {
+        MemGuard<> mg;
+        *const_cast<uint32_t*>(&deviceInfo.CHANNELS) = uint32_t(data[0]);
+        *const_cast<uint32_t*>(&deviceInfo.CH_ENABLE_MASK) = uint32_t(data[1]);
+    }
+    return result;
 }

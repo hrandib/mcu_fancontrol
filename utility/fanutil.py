@@ -139,7 +139,7 @@ def print_sensors(ser):
     values = []
     for i in range(0, data_size, 2):
         values.append((data[i] * 256 + data[i + 1]) / 2)
-    print(*values)
+    print(*values, end='\r')
 
 
 PWM_MAX_RAW = 80
@@ -194,7 +194,7 @@ PWM_NAME_PREFIX = "OUT"
 
 def add_config_pwms(config, cs):
     config['pwms'] = {}
-    for i in range(device_info['ch_mask']):
+    for i in range(device_info['ch_number']):
         config['pwms'][f'{PWM_NAME_PREFIX}{i}'] = {f'channel': i, 'minpwm': norm_pwm(cs[i]['pwmMin']),
                                                    'maxpwm': norm_pwm(cs[i]['pwmMax'])}
         fanstop_hyst = cs[i]['fanStopHysteresis']
@@ -204,7 +204,7 @@ def add_config_pwms(config, cs):
 
 def add_config_controllers(config, cs):
     config['controllers'] = {}
-    for i in range(device_info['ch_mask']):
+    for i in range(device_info['ch_number']):
         sensors = []
         for sn in range(cs[i]['sensorNumber']):
             sensors.append(f'S{sn}')
@@ -282,19 +282,39 @@ def update_header(text):
     return text.replace(origin, actual)
 
 
+def set_channels(serial, channels):
+    ch_number = len(channels)
+    ch_mask = 0
+    for i in range(ch_number):
+        ch_mask |= 1 << channels[i]
+    data = bytearray(3)
+    data[0] = ch_number.to_bytes(1, 'big')[0]
+    data[1] = ch_mask.to_bytes(1, 'big')[0]
+    data[2] = calc_crc(data[:-1])
+    print(data)
+    serial.write(b'e')
+    serial.write(data)
+    status = int.from_bytes(serial.read(1), 'big')
+    if status == 4:
+        print("Set channels finished successfully")
+    else:
+        print(f"Set channels failed with status: {hex(status)}")
+
 # Parse args
 parser = argparse.ArgumentParser(description='Fan controller service utility')
-mutex_group = parser.add_mutually_exclusive_group()
+mutex_arg_port = parser.add_mutually_exclusive_group()
+mutex_args = parser.add_mutually_exclusive_group()
 
-mutex_group.add_argument('--listports', '-l', action='store_true', help='List available serial ports')
-mutex_group.add_argument('--port', '-p', action='store', help='Serial port selection')
-parser.add_argument('--read', '-r', action='store', help='Retrieve current config and store it to file, expects file '
+mutex_arg_port.add_argument('--listports', '-l', action='store_true', help='List available serial ports')
+mutex_arg_port.add_argument('--port', '-p', action='store', help='Serial port selection')
+mutex_args.add_argument('--read', '-r', action='store', help='Retrieve current config and store it to file, expects file '
                                                          'name')
-parser.add_argument('--write', '-w', action='store', help='Upload config file to the controller, expects file name')
-parser.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
-parser.add_argument('--info', '-i', action='store_true', help='Print device information')
-parser.add_argument('--control', '-c', action='store_true', help='Print control structs')
-parser.add_argument('--debug', '-d', action='store_true', help='Print debug data')
+mutex_args.add_argument('--write', '-w', action='store', help='Upload config file to the controller, expects file name')
+mutex_args.add_argument('--sensors', '-s', action='store_true', help='Print temperatures')
+mutex_args.add_argument('--info', '-i', action='store_true', help='Print device information')
+mutex_args.add_argument('--control', '-c', action='store_true', help='Print control structs')
+mutex_args.add_argument('--debug', '-d', action='store_true', help='Print debug data')
+mutex_args.add_argument('--set-channels', '-e', nargs='+', type=int, action='store', help='Set active channels')
 
 args = parser.parse_args()
 
@@ -309,12 +329,14 @@ elif args.port is not None:
     if args.info:
         print(format_device_info())
     elif args.sensors:
+        print('\033[?25l', end="")
         print(format_ids())
         try:
             while(True):
                 print_sensors(serial)
                 time.sleep(1)
         except KeyboardInterrupt:
+            print('\033[?25h')
             exit(0)
     elif args.control:
         cs = get_control_structs(serial)
@@ -350,5 +372,7 @@ elif args.port is not None:
     elif args.debug:
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(get_debug_data(serial))
+    elif args.set_channels:
+        set_channels(serial, args.set_channels)
 else:
     print("Port name must be provided")
