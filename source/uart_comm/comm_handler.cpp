@@ -49,7 +49,7 @@ static uint8_t WriteControlStruct();
 static uint8_t WriteChannelsConfig();
 static uint8_t WriteAnalogConfig();
 
-#define PACKET_WAIT_TICKS (MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1)
+#define PACKET_WAIT_TICKS ((MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10)) + 2)
 
 SCM_TASK(ShellHandler, OS::pr0, 200)
 {
@@ -112,6 +112,7 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                     sensorMutex.unlock();
                 } break;
             }
+            Uart::Flush();
         }
         sleep(MS2ST(POLL_PERIOD_MS));
     }
