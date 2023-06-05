@@ -148,22 +148,35 @@ uint8_t WriteControlStruct()
     return result_status;
 }
 
+uint8_t popcount(uint8_t val)
+{
+    uint8_t result = 0;
+    for(uint8_t i = 8; i--;) {
+        result += (val & (1 << i)) ? 1 : 0;
+    }
+    return result;
+}
+
 uint8_t WriteChannelsConfig()
 {
     using namespace Mem;
-    uint8_t data[3];
+    uint8_t ch_mask, crc_val;
     uint8_t result = 0;
     Crc::Crc8 crc;
     crc.Init(CRC_INIT_VAL);
-    for(uint8_t i = 0; i < 3; ++i) {
-        result += Uart::Getch(data[i]);
-        crc(data[i]);
-    }
+    result += Uart::Getch(ch_mask);
+    crc(ch_mask);
+    result += Uart::Getch(crc_val);
+    crc(crc_val);
     result += !crc.GetResult();
+    uint8_t ch_number = popcount(ch_mask);
+    if(ch_number && ch_number <= CH_MAX_NUMBER) {
+        ++result;
+    }
     if(result == 4) {
         MemGuard<> mg;
-        *const_cast<uint32_t*>(&deviceInfo.CHANNELS) = uint32_t(data[0]);
-        *const_cast<uint32_t*>(&deviceInfo.CH_ENABLE_MASK) = uint32_t(data[1]);
+        *const_cast<uint32_t*>(&deviceInfo.CHANNELS) = uint32_t(ch_number);
+        *const_cast<uint32_t*>(&deviceInfo.CH_ENABLE_MASK) = uint32_t(ch_mask);
     }
     return result;
 }

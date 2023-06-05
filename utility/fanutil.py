@@ -283,15 +283,12 @@ def update_header(text):
 
 
 def set_channels(serial, channels):
-    ch_number = len(channels)
     ch_mask = 0
-    for i in range(ch_number):
+    for i in range(len(channels)):
         ch_mask |= 1 << channels[i]
-    data = bytearray(3)
-    data[0] = ch_number.to_bytes(1, 'big')[0]
-    data[1] = ch_mask.to_bytes(1, 'big')[0]
-    data[2] = calc_crc(data[:-1])
-    print(data)
+    data = bytearray(2)
+    data[0] = ch_mask.to_bytes(1, 'big')[0]
+    data[1] = calc_crc(data[:-1])
     serial.write(b'e')
     serial.write(data)
     status = int.from_bytes(serial.read(1), 'big')
