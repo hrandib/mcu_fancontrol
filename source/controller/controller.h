@@ -31,5 +31,6 @@
 
 extern bool isStopped[CH_MAX_NUMBER];
 extern int16_t iVal[CH_MAX_NUMBER];
+extern int16_t prevEma[CH_MAX_NUMBER];
 
 #endif // CONTROLLER_H

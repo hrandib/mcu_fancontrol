@@ -27,6 +27,7 @@
 
 #define CRC_INIT_VAL 0xDE
 #define CH_MAX_NUMBER 2
+#define EMA_MAX 127
 
 struct ControlStruct
 {
@@ -55,9 +56,11 @@ struct ControlStruct
         PiAlgo piOptions;
     } algo;
 
+    uint8_t kEma;
+
     uint8_t crc;
 };
 
-extern const ControlStruct controlStruct[CH_MAX_NUMBER];
+extern const volatile ControlStruct controlStruct[CH_MAX_NUMBER];
 
 #endif // CONTROL_STRUCT_H

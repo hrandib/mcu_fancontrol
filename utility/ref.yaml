@@ -1,4 +1,4 @@
-# The template configuration file for the mcu_fancontrol project, must not be changed by human
+# The template configuration file for the mcu_fancontrol project, must not be used directly
 
 # --- Sensor binding ---
 # Sensor types:
@@ -15,10 +15,10 @@ sensors:
 # 1. channel
 #   Channel binding, the controller supports two pwm channels: 0 and 1
 # 2. minpwm
-#   Minimum PWM value in % for the selected channel, limits the PWM value from below during regulation
+#   Minimum PWM value in % for the selected channel
 #   Default: 0
 # 3. maxpwm
-#   Maximum PWM value in % for the selected channel, limits the PWM value from above during regulation
+#   Maximum PWM value in % for the selected channel
 #   Default: 100
 # 4. fanstop_hyst
 #   Fan start/stop hysteresis value in degrees Celsius,
@@ -51,5 +51,6 @@ pwms:
 #   kp - proportional coefficient, maximum allowed value = 20, higher values will be truncated to this limit
 #   ki - integral coefficient, maximum allowed value = 2.5, higher values will be truncated to this limit
 #   max_i - maximum allowed value for I component in percents, default value = 50
+#   k_ema - α coefficient of EMA filter, default value = 1 (Disabled)
 controllers:
 

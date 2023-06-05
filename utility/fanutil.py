@@ -6,11 +6,11 @@ import sys
 import pprint
 import time
 
+CH_MAX_NUMBER = 2
 # 20 bytes of DeviceInfo struct, 1+8 bytes of sensor IDs array
 SIZEOF_DEVICE_INFO = 29
-SIZEOF_CONTROL_STRUCT = 15
+SIZEOF_CONTROL_STRUCT = 16
 SIZEOF_DEBUG_STRUCT = 8
-CH_MAX_NUMBER = 2
 CRC_INIT = 0xDE
 
 def calc_crc_byte(crc, byte):
@@ -85,8 +85,8 @@ def get_debug_data(ser):
     debug_struct = {}
     debug_struct['pwm'] = list(data[0:2])
     debug_struct['isStopped'] = list(data[2:4])
-    debug_struct['iVal'] = [(data[4] * 256 + data[5]),
-                            (data[6] * 256 + data[7])]
+    debug_struct['iVal'] = [int.from_bytes(data[4:6], 'big'),
+                            int.from_bytes(data[6:8], 'big')]
     return debug_struct
 
 
@@ -109,7 +109,8 @@ def parse_control_struct(data):
         result['algo']['kp'] = data[11]
         result['algo']['ki'] = data[12]
         result['algo']['max_i'] = data[13]
-    result['crc'] = data[14]
+    result['k_ema'] = data[14]
+    result['crc'] = data[15]
     return result
 
 
@@ -146,6 +147,7 @@ PWM_MAX_RAW = 80
 PWM_MAX_PERCENT = 100
 SCALE_FACTOR_KP = 16
 SCALE_FACTOR_KI = 128
+SCALE_FACTOR_KEMA = 127
 
 
 def norm_pwm(pwm_raw):
@@ -163,7 +165,15 @@ to_raw_max_i = to_raw_pwm
 
 
 def norm_kp(kp_raw):
-    return (kp_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KP * PWM_MAX_RAW)
+    return round((kp_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KP * PWM_MAX_RAW), 2)
+
+
+def norm_ki(ki_raw):
+    return round((ki_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KI * PWM_MAX_RAW), 2)
+
+
+def norm_kema(k_ema_raw):
+    return round(k_ema_raw / SCALE_FACTOR_KEMA, 2)
 
 
 def to_raw_kp(kp):
@@ -171,13 +181,13 @@ def to_raw_kp(kp):
     return result if result < 256 else 255
 
 
-def norm_ki(ki_raw):
-    return (ki_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KI * PWM_MAX_RAW)
-
-
 def to_raw_ki(ki):
     result = round((ki * SCALE_FACTOR_KI * PWM_MAX_RAW) / PWM_MAX_PERCENT)
     return result if result < 256 else 255
+
+
+def to_raw_kema(k_ema):
+    return round(k_ema * SCALE_FACTOR_KEMA)
 
 
 # YAML config functions
@@ -217,8 +227,9 @@ def add_config_controllers(config, cs):
             settings['ki'] = norm_ki(settings['ki'])
             settings['max_i'] = norm_max_i(settings['max_i'])
         poll_time = cs[i]['pollTimeSecs']
+        k_ema = norm_kema(cs[i]['k_ema'])
         config['controllers'][f'CTRL{i}'] = {'sensor': sensors, 'pwm': f'{PWM_NAME_PREFIX}{i}', 'mode': mode,
-                                             'set': settings, 'poll': poll_time}
+                                             'set': settings, 'poll': poll_time, 'k_ema': k_ema}
 
 
 def get_sensor_raw_id(sensor):
@@ -244,7 +255,7 @@ def to_raw_config(conf):
         if device_info['ch_mask'] & (1 << ch_target):
             data = bytearray(SIZEOF_CONTROL_STRUCT)
             settings = controllers[ch_config]
-            data[0] = settings['poll']
+            data[0] = settings.get('poll', 1)
             pwm = pwms[settings['pwm']]
             data[1] = pwm.get('fanstop_hyst', 0)
             data[2] = to_raw_pwm(pwm['minpwm'])
@@ -262,8 +273,9 @@ def to_raw_config(conf):
                 data[10] = algo['t']
                 data[11] = to_raw_kp(algo['kp'])
                 data[12] = to_raw_ki(algo['ki'])
-                data[13] = to_raw_max_i(algo['max_i'])
-            data[14] = calc_crc(data[: -1])
+                data[13] = to_raw_max_i(algo.get('max_i', 50))
+            data[14] = to_raw_kema(settings.get('k_ema', 1))
+            data[15] = calc_crc(data[: -1])
             packet[SIZEOF_CONTROL_STRUCT * ch_target:] = data
             ch_config += 1
         else:
@@ -275,7 +287,7 @@ def to_raw_config(conf):
 
 
 def update_header(text):
-    origin = '# The template configuration file for the mcu_fancontrol project, must not be changed by human'
+    origin = '# The template configuration file for the mcu_fancontrol project, must not be used directly'
     actual = '# The configuration file for the particular device\n'
     actual += '# --- Device info ---\n# '
     actual += '# '.join(format_device_info().splitlines(True))

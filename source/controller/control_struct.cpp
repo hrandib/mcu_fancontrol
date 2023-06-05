@@ -26,19 +26,20 @@
 
 // Default config in the eeprom after uploading the firmware
 #pragma location = ".eeprom.noinit"
-const ControlStruct controlStruct[CH_MAX_NUMBER] =
+const volatile ControlStruct controlStruct[CH_MAX_NUMBER] =
   {
     {   // channel 0
-        .pollTimeSecs = 2,              // poll time in secs
-        .fanStopHysteresis = 0,         // Temperature hysteresis for stopping a fan (pwm = 0%), 0 to disable
-        .pwmMin = 0, .pwmMax = 80,      // PWM regulation range, corresponds to 0-100%
+        .pollTimeSecs = 2,                      // poll time in secs
+        .fanStopHysteresis = 0,                 // Temperature hysteresis for stopping a fan (pwm = 0%), 0 to disable
+        .pwmMin = 0, .pwmMax = 80,              // PWM regulation range, corresponds to 0-100%
         .sensorsNumber = 1,
-        .sensorIds = { 7, 0, 0, 0 },    //Sensor IDs. Single sensor, LM75 with address 0x07
-        .algoType = ControlStruct::ALGO_2POINT, //Algorithm: 2 points
+        .sensorIds = { 7, 0, 0, 0 },            // Sensor IDs. Single sensor, LM75 with address 0x07
+        .algoType = ControlStruct::ALGO_2POINT, // Algorithm: 2 points
         .algo = {
             .p2Options= { .tmin = 35, .tmax = 55 }
         },
-        .crc = 0x98         //Maxim-Dallas 8bit crc, with init = 0xDE
+        .kEma = EMA_MAX,    // filter disabled, α = 1
+        .crc = 0x6A         // Maxim-Dallas 8bit crc, with init = 0xDE
     },
     {   // channel 1
         .pollTimeSecs = 4,      // poll time in secs
@@ -55,7 +56,8 @@ const ControlStruct controlStruct[CH_MAX_NUMBER] =
                 .max_i = 40 // Saturation limit for I value, corresponds to PWM units (0..80)
             }
         },
-        .crc = 0xD2         //Maxim-Dallas 8bit crc, with init = 0xDE
+        .kEma = EMA_MAX,    // filter disabled, α = 1
+        .crc = 0x52         // Maxim-Dallas 8bit crc, with init = 0xDE
      }
   };
 // clang-format on

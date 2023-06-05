@@ -25,15 +25,17 @@
 
 static void InitFanStopPin();
 static int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh);
-static uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs);
+static uint8_t Algo2PointFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs);
 static uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs);
-static void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh);
+static int16_t EmaFilter(uint8_t channel, int16_t input, const ControlStruct& cs);
+static void Worker(uint8_t channel, const volatile ControlStruct& cs, SensorHandler& sh);
 
 // Sets to high logic level in fan stop condition for the second channel
 typedef Mcudrv::Pa3 FanStopPin;
 
 bool isStopped[CH_MAX_NUMBER];
 int16_t iVal[CH_MAX_NUMBER];
+int16_t prevEma[CH_MAX_NUMBER];
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
@@ -69,9 +71,11 @@ void InitFanStopPin()
     FanStopPin::Set();
 }
 
-void Worker(uint8_t channel, const ControlStruct& cs, SensorHandler& sh)
+void Worker(uint8_t channel, const volatile ControlStruct& controlStruct, SensorHandler& sh)
 {
+    const ControlStruct& cs = const_cast<const ControlStruct&>(controlStruct);
     int16_t tCurrent = GetMaxTemp(cs, sh);
+    tCurrent = EmaFilter(channel, tCurrent, cs);
     uint8_t pwmVal;
     if(cs.algoType == ControlStruct::ALGO_2POINT) {
         pwmVal = Algo2PointFunc(channel, tCurrent, cs);
@@ -94,7 +98,7 @@ int16_t GetMaxTemp(const ControlStruct& cs, SensorHandler& sh)
     return result;
 }
 
-uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs)
+uint8_t Algo2PointFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs)
 {
     uint8_t result = 0;
     const ControlStruct::Point2Algo& algo = cs.algo.p2Options;
@@ -119,6 +123,7 @@ uint8_t Algo2PointFunc(int8_t channel, int16_t curTemp, const ControlStruct& cs)
     }
     return result;
 }
+
 uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs)
 {
     const ControlStruct::PiAlgo& algo = cs.algo.piOptions;
@@ -150,4 +155,11 @@ uint8_t AlgoPiFunc(uint8_t channel, int16_t curTemp, const ControlStruct& cs)
     }
 
     return (uint8_t)result;
+}
+
+int16_t EmaFilter(uint8_t channel, int16_t input, const ControlStruct& cs)
+{
+    int16_t result = ((cs.kEma * input) + ((EMA_MAX - cs.kEma) * prevEma[channel]) + (EMA_MAX >> 1)) >> 7;
+    prevEma[channel] = result;
+    return result;
 }
