@@ -139,15 +139,21 @@ def print_sensors(ser):
     data_size, data = get_sensor_data(ser)
     values = []
     for i in range(0, data_size, 2):
-        values.append((data[i] * 256 + data[i + 1]) / 2)
-    print(*values, end='\r')
+        val = int.from_bytes(data[i:i + 2], 'big', signed=True)
+        if val == -32768:
+            val = '----'
+        else:
+            val /= 2
+        values.append(val)
+    print(*values, end='')
+    print('                    ', end='\r')
 
 
 PWM_MAX_RAW = 80
 PWM_MAX_PERCENT = 100
 SCALE_FACTOR_KP = 16
 SCALE_FACTOR_KI = 128
-SCALE_FACTOR_KEMA = 127
+SCALE_FACTOR_KEMA = 128
 
 
 def norm_pwm(pwm_raw):
@@ -165,11 +171,11 @@ to_raw_max_i = to_raw_pwm
 
 
 def norm_kp(kp_raw):
-    return round((kp_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KP * PWM_MAX_RAW), 2)
+    return round((kp_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KP * PWM_MAX_RAW), 3)
 
 
 def norm_ki(ki_raw):
-    return round((ki_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KI * PWM_MAX_RAW), 2)
+    return round((ki_raw * PWM_MAX_PERCENT) / (SCALE_FACTOR_KI * PWM_MAX_RAW), 3)
 
 
 def norm_kema(k_ema_raw):

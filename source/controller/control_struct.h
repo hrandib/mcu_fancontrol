@@ -27,7 +27,7 @@
 
 #define CRC_INIT_VAL 0xDE
 #define CH_MAX_NUMBER 2
-#define EMA_MAX 127
+#define EMA_MAX 128
 
 struct ControlStruct
 {

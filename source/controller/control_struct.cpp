@@ -39,7 +39,7 @@ const volatile ControlStruct controlStruct[CH_MAX_NUMBER] =
             .p2Options= { .tmin = 35, .tmax = 55 }
         },
         .kEma = EMA_MAX,    // filter disabled, α = 1
-        .crc = 0x6A         // Maxim-Dallas 8bit crc, with init = 0xDE
+        .crc = 0x5F         // Maxim-Dallas 8bit crc, with init = 0xDE
     },
     {   // channel 1
         .pollTimeSecs = 4,      // poll time in secs
@@ -57,7 +57,7 @@ const volatile ControlStruct controlStruct[CH_MAX_NUMBER] =
             }
         },
         .kEma = EMA_MAX,    // filter disabled, α = 1
-        .crc = 0x52         // Maxim-Dallas 8bit crc, with init = 0xDE
+        .crc = 0x67         // Maxim-Dallas 8bit crc, with init = 0xDE
      }
   };
 // clang-format on
