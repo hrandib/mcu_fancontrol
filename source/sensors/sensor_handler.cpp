@@ -127,7 +127,8 @@ int16_t SensorHandler::GetTemp(uint8_t id)
 {
     // DS18B20
     if(id & DS18_ID_FLAG) {
-        return Ds18::Get(id & ~DS18_ID_FLAG) >> 3;
+        int16_t result = Ds18::Get(id & ~DS18_ID_FLAG);
+        return result == INT16_MIN ? INT16_MIN : result >> 3;
     }
     // LM75
     else {
