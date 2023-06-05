@@ -51,7 +51,12 @@ public:
     }
     uint8_t GetId(uint8_t index)
     {
-        return sensorIds_[index];
+        if(index >= sensorsNumber_) {
+            return UINT8_MAX;
+        }
+        else {
+            return sensorIds_[index];
+        }
     }
     uint8_t GetSensorsNumber()
     {

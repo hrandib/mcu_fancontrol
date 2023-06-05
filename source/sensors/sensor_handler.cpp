@@ -125,8 +125,12 @@ void SensorHandler::GetValues(int16_t* buf)
 
 int16_t SensorHandler::GetTemp(uint8_t id)
 {
+    // Addressing to the non-existent sensor
+    if(id == UINT8_MAX) {
+        return INT16_MIN;
+    }
     // DS18B20
-    if(id & DS18_ID_FLAG) {
+    else if(id & DS18_ID_FLAG) {
         int16_t result = Ds18::Get(id & ~DS18_ID_FLAG);
         return result == INT16_MIN ? INT16_MIN : result >> 3;
     }
