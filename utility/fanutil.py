@@ -4,6 +4,7 @@ from ruamel.yaml import YAML
 import argparse
 import sys
 import pprint
+import time
 
 # 20 bytes of DeviceInfo struct, 1+8 bytes of sensor IDs array
 SIZEOF_DEVICE_INFO = 29
@@ -51,7 +52,7 @@ def init_device_info(ser):
 
 
 def format_ids():
-    ids_string = "Sensor IDs:  "
+    ids_string = "Sensor IDs:\n"
     for n in range(device_info['sens_number']):
         ids_string += f"0x{(device_info['sensor_ids'][n]):02x} "
     return ids_string
@@ -307,10 +308,14 @@ elif args.port is not None:
     init_device_info(serial)
     if args.info:
         print(format_device_info())
-        print("Sensor data: ", end='')
-        print_sensors(serial)
     elif args.sensors:
-        print_sensors(serial)
+        print(format_ids())
+        try:
+            while(True):
+                print_sensors(serial)
+                time.sleep(1)
+        except KeyboardInterrupt:
+            exit(0)
     elif args.control:
         cs = get_control_structs(serial)
         yaml = YAML()
