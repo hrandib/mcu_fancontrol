@@ -10,6 +10,7 @@ SIZEOF_DEVICE_INFO = 29
 SIZEOF_CONTROL_STRUCT = 15
 SIZEOF_DEBUG_STRUCT = 8
 CH_MAX_NUMBER = 2
+CRC_INIT = 0xDE
 
 def calc_crc_byte(crc, byte):
     for i in range(8, 0, -1):
@@ -22,7 +23,7 @@ def calc_crc_byte(crc, byte):
 
 
 def calc_crc(arr):
-    c = 0xDE
+    c = CRC_INIT
     for b in arr:
         c = calc_crc_byte(c, b)
     return c
@@ -60,10 +61,10 @@ def format_device_info():
     ch_number = device_info['ch_number'];
     result = (f"Firmware version: {device_info['fw_ver_major']}.{device_info['fw_ver_minor']}\n"
     f"Channels number: {ch_number}\n")
-    for ch in range(CH_MAX_NUMBER):
-        if device_info['ch_mask'] & (1 << ch):
-            type = 'Analog' if device_info['ch_types_mask'] & (1 << ch) else 'PWM'
-            result += f"Channel {ch} mode: {type}\n"
+    for ch_config in range(CH_MAX_NUMBER):
+        if device_info['ch_mask'] & (1 << ch_config):
+            type = 'Analog' if device_info['ch_types_mask'] & (1 << ch_config) else 'PWM'
+            result += f"Channel {ch_config} mode: {type}\n"
     result += f"Sensors amount: {device_info['sens_number']}\n"
     result += format_ids()
     return result
@@ -229,36 +230,46 @@ def get_sensor_raw_id(sensor):
 
 # Upload config to the controller
 def to_raw_config(conf):
-    packet = bytearray(SIZEOF_CONTROL_STRUCT * device_info['ch_mask'])
-    print(conf['controllers'])
+    if device_info['ch_number'] != len(conf['controllers']):
+        print(f"Defined controllers number is not equal to available in hardware: "
+        f"HW - {device_info['ch_number']}, Config - {len(conf['controllers'])}")
+        exit(-1)
+    packet = bytearray(SIZEOF_CONTROL_STRUCT * device_info['ch_number'])
+    controllers = list(conf['controllers'].values())
     pwms = conf['pwms']
     all_sensors = conf['sensors']
-    ch = 0
-    for name, settings in conf['controllers'].items():
-        data = bytearray(SIZEOF_CONTROL_STRUCT)
-        data[0] = settings['poll']
-        pwm = pwms[settings['pwm']]
-        data[1] = pwm.get('fanstop_hyst', 0)
-        data[2] = to_raw_pwm(pwm['minpwm'])
-        data[3] = to_raw_pwm(pwm['maxpwm'])
-
-        data[4] = len(settings['sensor'])
-        for i, s_name in enumerate(settings['sensor']):
-            data[5 + i] = get_sensor_raw_id(all_sensors[s_name])
-        algo = settings['set']
-        if settings['mode'] == 'two_point':
-            data[9] = 0
-            data[10] = algo['tmin']
-            data[11] = algo['tmax']
+    ch_config = 0
+    for ch_target in range(CH_MAX_NUMBER):
+        if device_info['ch_mask'] & (1 << ch_target):
+            data = bytearray(SIZEOF_CONTROL_STRUCT)
+            settings = controllers[ch_config]
+            data[0] = settings['poll']
+            pwm = pwms[settings['pwm']]
+            data[1] = pwm.get('fanstop_hyst', 0)
+            data[2] = to_raw_pwm(pwm['minpwm'])
+            data[3] = to_raw_pwm(pwm['maxpwm'])
+            data[4] = len(settings['sensor'])
+            for i, s_name in enumerate(settings['sensor']):
+                data[5 + i] = get_sensor_raw_id(all_sensors[s_name])
+            algo = settings['set']
+            if settings['mode'] == 'two_point':
+                data[9] = 0
+                data[10] = algo['tmin']
+                data[11] = algo['tmax']
+            else:
+                data[9] = 1
+                data[10] = algo['t']
+                data[11] = to_raw_kp(algo['kp'])
+                data[12] = to_raw_ki(algo['ki'])
+                data[13] = to_raw_max_i(algo['max_i'])
+            data[14] = calc_crc(data[: -1])
+            packet[SIZEOF_CONTROL_STRUCT * ch_target:] = data
+            ch_config += 1
         else:
-            data[9] = 1
-            data[10] = algo['t']
-            data[11] = to_raw_kp(algo['kp'])
-            data[12] = to_raw_ki(algo['ki'])
-            data[13] = to_raw_max_i(algo['max_i'])
-        data[14] = calc_crc(data[: -1])
-        packet[SIZEOF_CONTROL_STRUCT * ch:] = data
-        ch += 1
+            data = bytearray(SIZEOF_CONTROL_STRUCT)
+            data[-1] = calc_crc(data[: -1])
+            packet[SIZEOF_CONTROL_STRUCT * ch_target:] = data
+    # print(packet.hex(' '))
     return packet
 
 
@@ -303,7 +314,7 @@ elif args.port is not None:
     elif args.control:
         cs = get_control_structs(serial)
         yaml = YAML()
-        yaml.dump(get_control_structs(serial), sys.stdout)
+        yaml.dump(cs, sys.stdout)
     elif args.read:
         cs = get_control_structs(serial)
         f = open("ref.yaml", "r")
@@ -319,15 +330,15 @@ elif args.port is not None:
         yaml.dump(config_template, f)
         f.close()
     elif args.write:
-        yaml = YAML()
+        yaml = YAML(typ='safe', pure=True)
         f = open(args.write, "r")
         config = yaml.load(f)
         f.close()
         data = to_raw_config(config)
         serial.write(b'w')
         serial.write(data)
-        status = int.from_bytes(serial.read(1), 'little')
-        if status == device_info['ch_mask'] * 2:
+        status = int.from_bytes(serial.read(1), 'big')
+        if status == CH_MAX_NUMBER * 2:
             print("Config upload finished successfully")
         else:
             print(f"Config upload failed with status: {status}")
