@@ -38,6 +38,6 @@ struct DeviceInfo
     const uint32_t CH_ANALOG_MASK;
 };
 
-extern const DeviceInfo deviceInfo;
+extern const volatile DeviceInfo deviceInfo;
 
 #endif // DEVICE_INFO_H

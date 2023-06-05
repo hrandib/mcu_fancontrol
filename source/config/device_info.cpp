@@ -26,7 +26,7 @@
 
 // Default device info in the eeprom after uploading the firmware
 #pragma location = ".eeprom.noinit"
-const DeviceInfo deviceInfo =
+const volatile DeviceInfo deviceInfo =
 {
     .FW_MAJOR = 1,
     .FW_MINOR = 1,
