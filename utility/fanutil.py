@@ -283,13 +283,42 @@ def update_header(text):
 
 
 def set_channels(serial, channels):
+    if len(channels) > CH_MAX_NUMBER:
+        print(f"Number of channels exceed the limit {CH_MAX_NUMBER}")
+        exit(-1)
+    ch_mask_limit = (1 << CH_MAX_NUMBER) - 1
     ch_mask = 0
     for i in range(len(channels)):
         ch_mask |= 1 << channels[i]
+    if ch_mask > ch_mask_limit:
+        print(f"Channels mask exceed the limit {hex(ch_mask_limit)}")
+        exit(-1)
     data = bytearray(2)
     data[0] = ch_mask.to_bytes(1, 'big')[0]
     data[1] = calc_crc(data[:-1])
     serial.write(b'e')
+    serial.write(data)
+    status = int.from_bytes(serial.read(1), 'big')
+    if status == 4:
+        print("Set channels finished successfully")
+    else:
+        print(f"Set channels failed with status: {hex(status)}")
+
+def set_analog(serial, analog_channels):
+    if len(analog_channels) > CH_MAX_NUMBER:
+        print(f"Number of channels exceed the limit {CH_MAX_NUMBER}")
+        exit(-1)
+    ch_mask_limit = (1 << CH_MAX_NUMBER) - 1
+    ch_mask = 0
+    for i in range(len(analog_channels)):
+        ch_mask |= 1 << analog_channels[i]
+    if ch_mask > ch_mask_limit:
+        print(f"Channels mask exceed the limit {hex(ch_mask_limit)}")
+        exit(-1)
+    data = bytearray(2)
+    data[0] = ch_mask.to_bytes(1, 'big')[0]
+    data[1] = calc_crc(data[:-1])
+    serial.write(b'a')
     serial.write(data)
     status = int.from_bytes(serial.read(1), 'big')
     if status == 4:
@@ -312,6 +341,8 @@ mutex_args.add_argument('--info', '-i', action='store_true', help='Print device 
 mutex_args.add_argument('--control', '-c', action='store_true', help='Print control structs')
 mutex_args.add_argument('--debug', '-d', action='store_true', help='Print debug data')
 mutex_args.add_argument('--set-channels', '-e', nargs='+', type=int, action='store', help='Set active channels')
+mutex_args.add_argument('--set-analog', '-a', nargs='*', type=int, action='store', help='Set analog channels')
+
 
 args = parser.parse_args()
 
@@ -371,5 +402,7 @@ elif args.port is not None:
         pp.pprint(get_debug_data(serial))
     elif args.set_channels:
         set_channels(serial, args.set_channels)
+    elif args.set_analog is not None:
+        set_analog(serial, args.set_analog)
 else:
     print("Port name must be provided")

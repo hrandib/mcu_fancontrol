@@ -47,6 +47,9 @@ static void InitUart()
 
 static uint8_t WriteControlStruct();
 static uint8_t WriteChannelsConfig();
+static uint8_t WriteAnalogConfig();
+
+#define PACKET_WAIT_TICKS (MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1)
 
 SCM_TASK(ShellHandler, OS::pr0, 200)
 {
@@ -67,13 +70,18 @@ SCM_TASK(ShellHandler, OS::pr0, 200)
                 } break;
                 // Write config
                 case 'w':
-                    sleep(MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1);
+                    sleep(PACKET_WAIT_TICKS);
                     Uart::Putch(WriteControlStruct());
                     break;
                 // Set active channels
                 case 'e':
-                    sleep(MS2ST(1000 * sizeof(ControlStruct) * 2) / (UART_BAUDRATE / 10) + 1);
+                    sleep(PACKET_WAIT_TICKS);
                     Uart::Putch(WriteChannelsConfig());
+                    break;
+                // Set analog channels, just for the report, not used in the business logic
+                case 'a':
+                    sleep(PACKET_WAIT_TICKS);
+                    Uart::Putch(WriteAnalogConfig());
                     break;
                 // Read config
                 case 'r':
@@ -177,6 +185,29 @@ uint8_t WriteChannelsConfig()
         MemGuard<> mg;
         *const_cast<uint32_t*>(&deviceInfo.CHANNELS) = uint32_t(ch_number);
         *const_cast<uint32_t*>(&deviceInfo.CH_ENABLE_MASK) = uint32_t(ch_mask);
+    }
+    return result;
+}
+
+uint8_t WriteAnalogConfig()
+{
+    using namespace Mem;
+    uint8_t ch_mask, crc_val;
+    uint8_t result = 0;
+    Crc::Crc8 crc;
+    crc.Init(CRC_INIT_VAL);
+    result += Uart::Getch(ch_mask);
+    crc(ch_mask);
+    result += Uart::Getch(crc_val);
+    crc(crc_val);
+    result += !crc.GetResult();
+    uint8_t ch_number = popcount(ch_mask);
+    if(ch_number <= CH_MAX_NUMBER) {
+        ++result;
+    }
+    if(result == 4) {
+        MemGuard<> mg;
+        *const_cast<uint32_t*>(&deviceInfo.CH_ANALOG_MASK) = uint32_t(ch_mask);
     }
     return result;
 }
