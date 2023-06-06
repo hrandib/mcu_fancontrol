@@ -123,6 +123,17 @@ void SensorHandler::GetValues(int16_t* buf)
     }
 }
 
+uint8_t SensorHandler::ConvertToDs18Id(uint8_t id)
+{
+    for(uint8_t i = 0; i < Ds18::GetSensorsNumber(); ++i) {
+        if(id == (Ds18::GetId(i).crc | DS18_ID_FLAG)) {
+            id = i;
+            break;
+        }
+    }
+    return id;
+}
+
 int16_t SensorHandler::GetTemp(uint8_t id)
 {
     // Addressing to the non-existent sensor
@@ -131,7 +142,8 @@ int16_t SensorHandler::GetTemp(uint8_t id)
     }
     // DS18B20
     else if(id & DS18_ID_FLAG) {
-        int16_t result = Ds18::Get(id & ~DS18_ID_FLAG);
+        id = ConvertToDs18Id(id);
+        int16_t result = Ds18::Get(id);
         return result == INT16_MIN ? INT16_MIN : result >> 3;
     }
     // LM75
@@ -161,7 +173,12 @@ uint8_t SensorHandler::InitDs18(uint8_t indexOffset)
         sensorsNumber = SENSOR_MAX_NUMBER / 2;
     }
     for(uint8_t i = 0; i < sensorsNumber; ++i) {
-        sensorIds_[i + indexOffset] = DS18_ID_FLAG | i;
+        uint8_t id = DS18_ID_FLAG | Ds18::GetId(i).crc;
+        // Exclude a sensor with CRC 0bx1111111 as this ID reserved for the missing sensor
+        if(id == UINT8_MAX) {
+            continue;
+        }
+        sensorIds_[i + indexOffset] = DS18_ID_FLAG | Ds18::GetId(i).crc;
     }
     Ds18::SetResolution(Ds18::RES_9BIT);
     return sensorsNumber + indexOffset;

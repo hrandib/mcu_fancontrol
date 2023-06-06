@@ -44,6 +44,7 @@ public:
     void Convert();
     bool Ds18sensorsPresent();
     void GetValues(int16_t* buf);
+    uint8_t ConvertToDs18Id(uint8_t id);
 
     const uint8_t* GetIds()
     {
