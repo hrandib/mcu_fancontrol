@@ -54,7 +54,7 @@ SCM_TASK(ControlLoop, OS::pr1, 150)
         if(sensorHandler.Ds18sensorsPresent()) {
             sensorHandler.Convert();
         }
-        sleep(MS2ST(100));
+        sleep(MS2ST(SensorHandler::CONVERT_TIME_MS));
         for(uint8_t i = 0; i < CH_MAX_NUMBER; ++i) {
             if(deviceInfo.CH_ENABLE_MASK & (1U << i) && ++pollTimeCounter[i] == controlStruct[i].pollTimeSecs) {
                 Worker(i, controlStruct[i], sensorHandler);
