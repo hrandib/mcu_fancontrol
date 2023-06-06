@@ -51,6 +51,8 @@ pwms:
 #   kp - proportional coefficient, maximum allowed value = 20, higher values will be truncated to this limit
 #   ki - integral coefficient, maximum allowed value = 2.5, higher values will be truncated to this limit
 #   max_i - maximum allowed value for I component in percents, default value = 50
-#   k_ema - α coefficient of EMA filter, default value = 1 (Disabled)
+#
+# 4. k_ema
+#   α coefficient of EMA filter, default value = 1 (Disabled)
 controllers:
 
