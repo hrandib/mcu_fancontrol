@@ -6,9 +6,9 @@
 # 2. LM75
 #   Both types of sensors are match by the 'id' property.
 #   The hardware supports up 4 sensors of each type, 8 sensors in total.
-#   LM75 id directly corresponds to I2C address of the particular IC
-#   DS18B20 id is an abstract index that depends on the 1-Wire ROM search procedure.
-#   It can be matched with the real sensor via utility: fanutil.py -p [COM PORT] -i
+#   LM75 ID directly corresponds to I2C address of the particular IC (0x00-0x07 range)
+#   DS18B20 ID is based on the sensor ROM CRC (but not equal to it) and
+#     it can be matched with the real sensor via utility: fanutil.py -p [COM PORT] -s
 sensors:
 
 # --- PWM channel binding ---

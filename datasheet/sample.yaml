@@ -1,37 +1,41 @@
----
-# Sample configuration file for the mcu_fancontrol project
+# The configuration file for the particular device
+# --- Device info ---
+# Firmware version: 1.1
+# Channels number: 2
+# Channel 0 mode: PWM
+# Channel 1 mode: PWM
+# Sensors amount: 4
+# Sensor IDs:
+# 0x07 0xA2 0x92 0xC9 
 
 # --- Sensor binding ---
 # Sensor types:
-# 1. ds18b20
-# 2. lm75
+# 1. DS18B20
+# 2. LM75
 #   Both types of sensors are match by the 'id' property.
 #   The hardware supports up 4 sensors of each type, 8 sensors in total.
-#   lm75 id directly corresponds to i2C address of the particular IC
-#   ds18b20 id is an abstract index that depends on the 1-Wire ROM search procedure.
-#   It can be matched with the real sensor via the controller console,
-sensors:
-  - case_sens: { type: DS18B20, id: 0 }
-  - pcb_sens: { type: LM75, id: 7}
-  - power_sens: { type: LM75, id: 0}
+#   LM75 id directly corresponds to I2C address of the particular IC
+#   DS18B20 id is an abstract index that depends on the 1-Wire ROM search procedure.
+#   It can be matched with the real sensor via utility: fanutil.py -p [COM PORT] -s
+sensors: {S0: {type: LM75, id: 0x07}, S1: {type: DS18B20, id: 0xA2}, S2: {type: DS18B20,
+    id: 0x92}, S3: {type: DS18B20, id: 0xC9}}
 
 # --- PWM channel binding ---
 # 1. channel
 #   Channel binding, the controller supports two pwm channels: 0 and 1
 # 2. minpwm
-#   Minimum PWM value in % for the selected channel, limits the PWM value from below during regulation
+#   Minimum PWM value in % for the selected channel
 #   Default: 0
 # 3. maxpwm
-#   Maximum PWM value in % for the selected channel, limits the PWM value from above during regulation
+#   Maximum PWM value in % for the selected channel
 #   Default: 100
 # 4. fanstop_hyst
 #   Fan start/stop hysteresis value in degrees Celsius,
 #   e.g. if controller defines lowest temperature setting as 50 and hysteresis equals to 5,
 #   the fan will be stopped after reaching 45 degrees and then will be started at 50 degrees.
 #   Set to 0 to disable fan stop function (default value)
-pwms:
-  - case_fan: { channel: 0, minpwm: 0, maxpwm: 100, fanstop_hyst: 3 }
-  - power_fan: { channel: 1, minpwm: 25, maxpwm: 75 }
+pwms: {OUT0: {channel: 0, minpwm: 0, maxpwm: 100}, OUT1: {channel: 1, minpwm: 25,
+    maxpwm: 88, fanstop_hyst: 3}}
 
 # --- Controller binding ---
 #   Links sensor declarations to pwm declarations with defined control algorithm
@@ -54,14 +58,13 @@ pwms:
 #
 #   For 'pi' it contains:
 #   t - desired temperature setting
-#   kp - proportional coefficient (max value = 20)
-#   ki - integral coefficient (max value = 2.5)
+#   kp - proportional coefficient, maximum allowed value = 20, higher values will be truncated to this limit
+#   ki - integral coefficient, maximum allowed value = 2.5, higher values will be truncated to this limit
 #   max_i - maximum allowed value for I component in percents, default value = 50
-# Note: kp and ki coefficients define degrees to % of PWM function
-controllers:
-  - main_controller: { sensor: [ case_sens, pcb_sens ], pwm: case_fan, mode: two_point,
-      set: { tmin: 50, tmax: 78 }, poll: 4
-    }
-  - cha1: { sensor: [ power_sens ], pwm: power_fan, mode: pi,
-     set: { t: 45, kp: 2, ki: 0.1, max_i: 60 }, poll: 5
-   }
+#
+# 4. k_ema
+#   α coefficient of EMA filter, default value = 1 (Disabled)
+controllers: {CTRL0: {sensor: [S0, S1], pwm: OUT0, mode: two_point, set: {tmin: 35,
+      tmax: 55}, poll: 1, k_ema: 1.0}, CTRL1: {sensor: [S0], pwm: OUT1, mode: pi,
+    set: {t: 40, kp: 1.25, ki: 0.625, max_i: 50}, poll: 1, k_ema: 1.0}}
+
