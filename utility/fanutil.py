@@ -1,6 +1,7 @@
 from serial.tools import list_ports
 import serial
 from ruamel.yaml import YAML
+from ruamel.yaml.scalarint import HexCapsInt as HexInt
 import argparse
 import sys
 import pprint
@@ -54,7 +55,7 @@ def init_device_info(ser):
 def format_ids():
     ids_string = "Sensor IDs:\n"
     for n in range(device_info['sens_number']):
-        ids_string += f"0x{(device_info['sensor_ids'][n]):02x} "
+        ids_string += f"0x{(device_info['sensor_ids'][n]):02X} "
     return ids_string
 
 
@@ -201,8 +202,7 @@ def add_config_sensors(config):
     config['sensors'] = {}
     for i, s_id in enumerate(device_info['sensor_ids']):
         s_type = 'DS18B20' if s_id & 0x80 else 'LM75'
-        s_id &= ~0x80
-        config['sensors'][f'S{i}'] = {'type': s_type, 'id': s_id}
+        config['sensors'][f'S{i}'] = {'type': s_type, 'id': HexInt(s_id, width=2)}
 
 
 PWM_NAME_PREFIX = "OUT"
