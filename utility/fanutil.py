@@ -408,6 +408,7 @@ elif args.port is not None:
         config = yaml.load(f)
         f.close()
         data = to_raw_config(config)
+        serial.timeout = 0.5
         serial.write(b'w')
         serial.write(data)
         status = int.from_bytes(serial.read(1), 'big')
