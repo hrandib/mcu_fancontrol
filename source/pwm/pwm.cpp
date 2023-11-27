@@ -30,12 +30,12 @@ using namespace T1;
 void InitPwm()
 {
     GpioC::SetConfig<P6 | P7, GpioBase::Out_PushPull_fast>();
-    Timer1::Init(1, ARPE | CEN);
     Timer1::WriteAutoReload(PWM_MAXVAL); // PWM 25kHz
     Timer1::SetChannelCfg<Ch1, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
     Timer1::ChannelEnable<Ch1>();
     Timer1::SetChannelCfg<Ch2, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
     Timer1::ChannelEnable<Ch2>();
+    Timer1::Init(1, ARPE | CEN);
 }
 
 void SetPwm(uint8_t ch, uint8_t val)
