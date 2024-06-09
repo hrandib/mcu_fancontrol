@@ -1,8 +1,5 @@
-# Multisim
-*.log
-*.ewnet
-*(Security copy)
-*bak~
+# Common
+*.zip
 
 # Qbs
 build-*/
