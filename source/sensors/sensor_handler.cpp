@@ -30,7 +30,7 @@ using namespace Mcudrv;
 typedef Twis::SoftTwi<Twis::Standard, Pb4, Pb5> I2c;
 typedef Twis::Lm75<I2c> Lm75;
 
-typedef OneWire<Pd2> OneWireBus;
+typedef OneWire<Pc3> OneWireBus;
 typedef Ds18b20<OneWireBus, SENSOR_MAX_NUMBER / 2> Ds18;
 
 enum { COLUMN_SIZE = 6 };
