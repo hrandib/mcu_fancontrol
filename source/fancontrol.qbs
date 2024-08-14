@@ -17,7 +17,7 @@ Product {
 
         cpp.defines: [
             "STM8S103",
-            "F_CPU=2000000UL",
+            "F_CPU=8000000UL",
             "__STDC_LIMIT_MACROS",
         ]
 

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "clock.h"
 #include "iwdg.h"
 #include "pinlist.h"
 #include "scm_utils.h"
@@ -31,6 +32,8 @@ static void InitPeripherals()
 {
     using namespace Mcudrv;
     using namespace T4;
+    // FCPU = 8MHz
+    SysClock::SetHsiDivider(SysClock::Div2);
     GpioA::WriteConfig<0xFF, GpioBase::In_Pullup>();
     GpioB::WriteConfig<0xFF, GpioBase::In_Pullup>();
     GpioC::WriteConfig<0xFF, GpioBase::In_Pullup>();

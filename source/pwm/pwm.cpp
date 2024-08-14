@@ -30,7 +30,7 @@ using namespace T1;
 void InitPwm()
 {
     GpioC::SetConfig<P6 | P7, GpioBase::Out_PushPull_fast>();
-    Timer1::WriteAutoReload(PWM_MAXVAL); // PWM 25kHz
+    Timer1::WriteAutoReload(PWM_MAXVAL); // PWM 100kHz
     Timer1::SetChannelCfg<Ch1, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
     Timer1::ChannelEnable<Ch1>();
     Timer1::SetChannelCfg<Ch2, Output, ChannelCfgOut(Out_PWM_Mode1 | Out_PreloadEnable)>();
