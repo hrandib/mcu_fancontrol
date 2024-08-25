@@ -178,7 +178,7 @@ typedef uint_fast16_t tick_count_t;
 //    scmRTOS ticks frequency
 //
 //
-#define scmRTOS_TICK_RATE_HZ 122UL
+#define scmRTOS_TICK_RATE_HZ 244UL
 
 #endif // scmRTOS_CONFIG_H
 //-----------------------------------------------------------------------------
