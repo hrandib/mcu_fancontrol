@@ -44,7 +44,8 @@ static void InitPeripherals()
 
 int main()
 {
-    // Must be enabled in option bytes
+    // Better to enable in option bytes
+    Mcudrv::Iwdg::Enable();
     Mcudrv::Iwdg::SetPeriod(Mcudrv::Iwdg::P_1s);
 
     InitPeripherals();
