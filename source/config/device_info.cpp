@@ -28,8 +28,8 @@
 #pragma location = ".eeprom.noinit"
 const volatile DeviceInfo deviceInfo =
 {
-    .FW_MAJOR = 1,
-    .FW_MINOR = 1,
+    .FW_MAJOR = 2,
+    .FW_MINOR = 0,
     .CHANNELS = 1,
     .CH_ENABLE_MASK = 0x01,
     .CH_ANALOG_MASK = 0x00
