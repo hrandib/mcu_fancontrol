@@ -38,7 +38,9 @@ int16_t iVal[CH_MAX_NUMBER];
 int16_t prevEma[CH_MAX_NUMBER];
 uint8_t faultCounter[CH_MAX_NUMBER];
 
-#define MAX_SENSOR_FAULT 3
+#define FAULT_MAX_COUNT 5
+#define FAULT_MAX_TEMP (110 * 2)
+#define FAULT_MIN_TEMP (-50 * 2)
 
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
@@ -79,8 +81,8 @@ void Worker(uint8_t channel, const volatile ControlStruct& controlStruct, Sensor
     const ControlStruct& cs = const_cast<const ControlStruct&>(controlStruct);
     int16_t tCurrent = GetMaxTemp(cs, sh);
     // One of the sensors is damaged or absent
-    if(tCurrent == INT16_MIN) {
-        if(faultCounter[channel] != MAX_SENSOR_FAULT) {
+    if(tCurrent < FAULT_MIN_TEMP || tCurrent > FAULT_MAX_TEMP) {
+        if(faultCounter[channel] != FAULT_MAX_COUNT) {
             ++faultCounter[channel];
             tCurrent = prevEma[channel];
         }
