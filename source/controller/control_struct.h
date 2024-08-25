@@ -23,10 +23,10 @@
 #ifndef CONTROL_STRUCT_H
 #define CONTROL_STRUCT_H
 
+#include "device_info.h"
 #include <stdint.h>
 
 #define CRC_INIT_VAL 0xDE
-#define CH_MAX_NUMBER 2
 #define EMA_MAX 128
 
 struct ControlStruct
