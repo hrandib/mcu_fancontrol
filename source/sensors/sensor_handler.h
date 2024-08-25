@@ -33,7 +33,7 @@
 class SensorHandler
 {
 public:
-    enum { CONVERT_TIME_MS = 100 };
+    enum { CONVERT_TIME_MS = 150 };
 
     SensorHandler();
     void Init();
