@@ -31,7 +31,21 @@ static int16_t EmaFilter(uint8_t channel, int16_t input, const ControlStruct& cs
 static void Worker(uint8_t channel, const volatile ControlStruct& cs, SensorHandler& sh);
 
 // Sets to high logic level in fan stop condition for the second channel
-typedef Mcudrv::Pa3 FanStopPin;
+typedef Mcudrv::Pd2 FanStopPin; // NTC1
+typedef Mcudrv::Pd3 AuxFanPin;  // NTC2
+#define AUX_FAN_HYST 10
+
+static inline void AuxFanPinControl(uint8_t ch, int16_t curTemp, int16_t maxTemp)
+{
+    if(ch == 1) {
+        if(curTemp >= maxTemp) {
+            AuxFanPin::Set();
+        }
+        else if(maxTemp - curTemp >= AUX_FAN_HYST) {
+            AuxFanPin::Clear();
+        }
+    }
+}
 
 bool isStopped[CH_MAX_NUMBER];
 int16_t iVal[CH_MAX_NUMBER];
@@ -43,6 +57,7 @@ uint8_t faultCounter[CH_MAX_NUMBER];
 SCM_TASK(ControlLoop, OS::pr1, 150)
 {
     uint8_t pollTimeCounter[CH_MAX_NUMBER] = {};
+    AuxFanPin::SetConfig<Mcudrv::GpioBase::Out_PushPull>();
     if(controlStruct[1].fanStopHysteresis) {
         InitFanStopPin();
     }
@@ -96,6 +111,7 @@ void Worker(uint8_t channel, const volatile ControlStruct& controlStruct, Sensor
     uint8_t pwmVal;
     if(cs.algoType == ControlStruct::ALGO_2POINT) {
         pwmVal = Algo2PointFunc(channel, tCurrent, cs);
+        AuxFanPinControl(channel, tCurrent, cs.algo.p2Options.tmax * 2);
     }
     else { // ALGO_PI
         pwmVal = AlgoPiFunc(channel, tCurrent, cs);
