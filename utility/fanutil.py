@@ -218,12 +218,16 @@ def add_config_pwms(config, cs):
             config['pwms'][f'OUT{i}']['fanstop_hyst'] = fanstop_hyst
 
 
+def get_sensor_by_id(id):
+    return f'S{device_info['sensor_ids'].index(id)}'
+
+
 def add_config_controllers(config, cs):
     config['controllers'] = {}
     for i in range(device_info['ch_number']):
         sensors = []
-        for sn in range(cs[i]['sensorNumber']):
-            sensors.append(f'S{sn}')
+        for id in cs[i]['sensorIds']:
+            sensors.append(get_sensor_by_id(id))
         settings = cs[i]['algo'].copy()
         if cs[i]['algoType'] == 0:
             mode = 'two_point'
